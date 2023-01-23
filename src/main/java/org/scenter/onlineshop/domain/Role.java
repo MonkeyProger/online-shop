@@ -4,9 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 import static javax.persistence.GenerationType.IDENTITY;
 
@@ -18,6 +16,7 @@ public class Role {
     @Id
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
+    @Enumerated(EnumType.STRING)
     private ERole name;
 
 }
