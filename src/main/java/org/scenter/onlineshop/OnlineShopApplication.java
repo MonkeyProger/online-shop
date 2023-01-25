@@ -39,7 +39,7 @@ public class OnlineShopApplication {
 			allRoles.add(new Role(null, ROLE_ADMIN));
 			allRoles.forEach(userDetailsService::saveRole);
 
-			AppUser admin = new AppUser("admin","admin@admin.admin","admin");
+			AppUser admin = new AppUser("admin","admin","admin@admin.admin","admin");
 			admin.setRoles(allRoles);
 			userDetailsService.saveUser(admin);
 		};

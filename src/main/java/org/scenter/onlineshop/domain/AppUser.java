@@ -18,14 +18,16 @@ import static javax.persistence.FetchType.EAGER;
 public class AppUser {
     @Id @GeneratedValue(strategy = AUTO)
     private Long id;
-    private String username;
+    private String name;
+    private String surname;
     private String email;
     private String password;
     @ManyToMany(fetch = EAGER)
     private Set<Role> roles = new HashSet<>();
 
-    public AppUser(String username, String email, String password) {
-        this.username = username;
+    public AppUser(String name, String surname, String email, String password) {
+        this.name = name;
+        this.surname = surname;
         this.email = email;
         this.password = password;
     }
