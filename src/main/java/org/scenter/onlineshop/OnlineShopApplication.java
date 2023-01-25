@@ -4,6 +4,7 @@ package org.scenter.onlineshop;
 import org.scenter.onlineshop.domain.AppUser;
 import org.scenter.onlineshop.domain.Role;
 import org.scenter.onlineshop.services.UserDetailsServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -17,11 +18,8 @@ import java.util.Set;
 import static org.scenter.onlineshop.domain.ERole.*;
 
 /*
-	User ( Имя , Фамилия , Email ,  пароль ) | Email , пароль нужны для аутентификации
-	Roles ( Название ) : ADMIN , USER ...
-	Product ( Название , цена , наличие/остатки )
-	Category ( Название )
-
+	Точка входа
+	Инициализация ролей, пользователя со всеми правами доступа
 */
 
 @SpringBootApplication
@@ -32,6 +30,7 @@ public class OnlineShopApplication {
 
 	@Bean
 	CommandLineRunner run(UserDetailsServiceImpl userDetailsService) {
+		PasswordEncoder encoder = new BCryptPasswordEncoder();
 		return args -> {
 			Set<Role> allRoles = new HashSet<>();
 			allRoles.add(new Role(null, ROLE_USER));
@@ -39,7 +38,7 @@ public class OnlineShopApplication {
 			allRoles.add(new Role(null, ROLE_ADMIN));
 			allRoles.forEach(userDetailsService::saveRole);
 
-			AppUser admin = new AppUser("admin","admin","admin@admin.admin","admin");
+			AppUser admin = new AppUser("admin","admin","admin@admin.admin",encoder.encode("admin"));
 			admin.setRoles(allRoles);
 			userDetailsService.saveUser(admin);
 		};
