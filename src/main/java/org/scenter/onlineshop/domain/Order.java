@@ -4,9 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
+
+import java.util.List;
 
 import static javax.persistence.GenerationType.AUTO;
 
@@ -14,11 +14,12 @@ import static javax.persistence.GenerationType.AUTO;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Product {
+public class Order {
     @Id
     @GeneratedValue(strategy = AUTO)
     private Long id;
-    private String name;
-    private Float price;
-    private Integer amount;
+    @OneToOne(cascade = CascadeType.MERGE)
+    private AppUser user;
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    private List<SaleProduct> order;
 }

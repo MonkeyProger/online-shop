@@ -8,17 +8,19 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
-import static javax.persistence.GenerationType.AUTO;
+import static javax.persistence.GenerationType.IDENTITY;
 
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Product {
+public class SaleProduct {
     @Id
-    @GeneratedValue(strategy = AUTO)
+    @GeneratedValue(strategy = IDENTITY)
     private Long id;
-    private String name;
-    private Float price;
-    private Integer amount;
+    private Long productId;
+    private String productName;
+    private int amount;
+    private float price;
+
 }

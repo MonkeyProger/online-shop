@@ -28,7 +28,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User with email \"" + email + "\" not found in the database")
                 );
-
         log.info("User found in the database: {}",email);
         return UserDetailsImpl.build(user);
     }
