@@ -21,7 +21,7 @@ public class Ordering {
     private Long id;
     @ManyToOne
     private AppUser user;
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.MERGE, targetEntity = SaleProduct.class)
+    @ManyToMany(fetch = FetchType.EAGER)
     private List<SaleProduct> cart = new ArrayList<>();
     private Float total;
 }
