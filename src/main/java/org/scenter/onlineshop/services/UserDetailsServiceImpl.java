@@ -17,14 +17,14 @@ import javax.transaction.Transactional;
 @Slf4j
 public class UserDetailsServiceImpl implements UserDetailsService {
     @Autowired
-    UserRepo userRepository;
+    UserRepo userRepo;
     @Autowired
-    RoleRepo roleRepository;
+    RoleRepo roleRepo;
 
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        AppUser user = userRepository.findByEmail(email)
+        AppUser user = userRepo.findByEmail(email)
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User with email \"" + email + "\" not found in the database")
                 );
@@ -34,11 +34,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Transactional
     public void saveRole(Role role){
-        roleRepository.save(role);
+        roleRepo.save(role);
     }
 
     @Transactional
     public void saveUser(AppUser user){
-        userRepository.save(user);
+        userRepo.save(user);
     }
 }

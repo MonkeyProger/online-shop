@@ -1,13 +1,15 @@
 package org.scenter.onlineshop.services;
 
 import lombok.AllArgsConstructor;
-import org.scenter.onlineshop.domain.Order;
+import org.scenter.onlineshop.domain.Ordering;
 import org.scenter.onlineshop.domain.Product;
 import org.scenter.onlineshop.domain.SaleProduct;
-import org.scenter.onlineshop.repo.OrderRepo;
+import org.scenter.onlineshop.repo.OrderingRepo;
 import org.scenter.onlineshop.repo.ProductRepo;
+import org.scenter.onlineshop.repo.SaleProductRepo;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,10 +17,11 @@ import java.util.Optional;
 @AllArgsConstructor
 public class OrderService {
 
-    private OrderRepo orderRepo;
+    private OrderingRepo orderingRepo;
+    private SaleProductRepo saleProductRepo;
     private ProductRepo productRepo;
 
-    public float getCartAmount(List<SaleProduct> productList){
+    public float getCartCost(List<SaleProduct> productList){
         float totalSum = 0f;
         float currentSum;
         int newAmount = 0;
@@ -38,14 +41,22 @@ public class OrderService {
                 totalSum += currentSum;
                 product.setAmount(newAmount);
                 newAmount = 0;
-                cartProduct.setPrice(currentSum);
                 productRepo.save(product);
             }
         }
         return totalSum;
     }
 
-    public Order saveOrder(Order order){
-        return orderRepo.save(order);
+    @Transactional
+    public void saveSaleProducts(List<SaleProduct> order){
+        saleProductRepo.saveAll(order);
     }
+
+    @Transactional
+    public void saveOrdering(Ordering order){
+        orderingRepo.save(order);
+    }
+
+    @Transactional
+    public void saveProduct(Product product) {productRepo.save(product);}
 }

@@ -2,7 +2,9 @@ package org.scenter.onlineshop;
 
 
 import org.scenter.onlineshop.domain.AppUser;
+import org.scenter.onlineshop.domain.Product;
 import org.scenter.onlineshop.domain.Role;
+import org.scenter.onlineshop.services.OrderService;
 import org.scenter.onlineshop.services.UserDetailsServiceImpl;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -28,7 +30,7 @@ public class OnlineShopApplication {
 	}
 
 	@Bean
-	CommandLineRunner run(UserDetailsServiceImpl userDetailsService) {
+	CommandLineRunner run(UserDetailsServiceImpl userDetailsService, OrderService orderService) {
 		PasswordEncoder encoder = new BCryptPasswordEncoder();
 		return args -> {
 			Set<Role> allRoles = new HashSet<>();
@@ -40,6 +42,10 @@ public class OnlineShopApplication {
 			AppUser admin = new AppUser("admin","admin","admin@admin.admin",encoder.encode("admin"));
 			admin.setRoles(allRoles);
 			userDetailsService.saveUser(admin);
+
+			Product iphone = new Product(null, "Iphone", 100.5f, 10);
+			Product rareIphone = new Product(null, "Rare Iphone", 9999.5f, 2);
+			orderService.saveProduct(iphone); orderService.saveProduct(rareIphone);
 		};
 	}
 }

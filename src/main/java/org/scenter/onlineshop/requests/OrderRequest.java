@@ -6,7 +6,6 @@ import org.scenter.onlineshop.domain.SaleProduct;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
-import java.util.HashMap;
 import java.util.List;
 
 @Data
@@ -16,6 +15,5 @@ public class OrderRequest {
     @Email
     private String email;
 
-    @NotBlank
     private List<SaleProduct> order;
 }

@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static javax.persistence.GenerationType.AUTO;
@@ -14,12 +15,13 @@ import static javax.persistence.GenerationType.AUTO;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Order {
+public class Ordering {
     @Id
     @GeneratedValue(strategy = AUTO)
     private Long id;
-    @OneToOne(cascade = CascadeType.MERGE)
+    @ManyToOne
     private AppUser user;
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    private List<SaleProduct> order;
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.MERGE, targetEntity = SaleProduct.class)
+    private List<SaleProduct> cart = new ArrayList<>();
+    private Float total;
 }
