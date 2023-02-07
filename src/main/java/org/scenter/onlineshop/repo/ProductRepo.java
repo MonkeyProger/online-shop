@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface ProductRepo extends JpaRepository<Product,Long> {
     @Override
     Optional<Product> findById(Long id);
+
+    Optional<Product> findByName(String name);
 }

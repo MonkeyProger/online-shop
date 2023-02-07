@@ -8,4 +8,5 @@ import lombok.NoArgsConstructor;
 public class OrderResponse {
     Float amount;
     String date;
+    Long id;
 }

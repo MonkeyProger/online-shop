@@ -2,9 +2,10 @@ package org.scenter.onlineshop;
 
 
 import org.scenter.onlineshop.domain.AppUser;
+import org.scenter.onlineshop.domain.Category;
 import org.scenter.onlineshop.domain.Product;
 import org.scenter.onlineshop.domain.Role;
-import org.scenter.onlineshop.services.OrderService;
+import org.scenter.onlineshop.services.StockService;
 import org.scenter.onlineshop.services.UserDetailsServiceImpl;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -13,15 +14,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 import static org.scenter.onlineshop.domain.ERole.*;
-
-/*
-	Точка входа
-	Инициализация ролей, пользователя со всеми правами доступа
-*/
 
 @SpringBootApplication
 public class OnlineShopApplication {
@@ -30,7 +27,7 @@ public class OnlineShopApplication {
 	}
 
 	@Bean
-	CommandLineRunner run(UserDetailsServiceImpl userDetailsService, OrderService orderService) {
+	CommandLineRunner run(UserDetailsServiceImpl userDetailsService, StockService stockService) {
 		PasswordEncoder encoder = new BCryptPasswordEncoder();
 		return args -> {
 			Set<Role> allRoles = new HashSet<>();
@@ -43,9 +40,32 @@ public class OnlineShopApplication {
 			admin.setRoles(allRoles);
 			userDetailsService.saveUser(admin);
 
-			Product iphone = new Product(null, "Iphone", 100.5f, 10);
-			Product rareIphone = new Product(null, "Rare Iphone", 9999.5f, 2);
-			orderService.saveProduct(iphone); orderService.saveProduct(rareIphone);
+			stockService.saveProduct(new Product(null, "Iphone14","Смартфон Apple IPhone 14", 50.50f, 100));
+			stockService.saveProduct(new Product(null, "Iphone13","Смартфон Apple IPhone 13", 25.25f, 4));
+			stockService.saveProduct(new Product(null,"SamsungGS8","Смартфон Samsung Galaxy S8",25f,200));
+			stockService.saveProduct(new Product(null,"HuaweiP50","Смартфон Huawei P50",23f,200));
+			stockService.saveProduct(new Product(null,"AppleAirPodsPro","Наушники Apple AirPods Pro",15f,200));
+			stockService.saveProduct(new Product(null,"CaseHuaweiP50","Наушники Apple AirPods Pro",15f,200));
+			stockService.saveProduct(new Product(null,"YandexStation","Умная колонка Яндекс Станция",20f,200));
+
+			stockService.saveCategory(new Category(null,"Smartphones","Смартфоны",null,new ArrayList<>()));
+			stockService.saveCategory(new Category(null,"Apple","Apple", null,new ArrayList<>()));
+			stockService.saveCategory(new Category(null,"Samsung","Samsung",null,new ArrayList<>()));
+			stockService.saveCategory(new Category(null,"AudioEquipment","Аудиотехника",null,new ArrayList<>()));
+			stockService.saveCategory(new Category(null,"Headphones","Наушники",null,new ArrayList<>()));
+			stockService.saveCategory(new Category(null,"PortableSpeakers","Портативные колонки",null,new ArrayList<>()));
+
+			stockService.saveParentToCategory("Apple","Smartphones");
+			stockService.saveParentToCategory("Samsung","Smartphones");
+			stockService.saveParentToCategory("Headphones","AudioEquipment");
+			stockService.saveParentToCategory("PortableSpeakers","AudioEquipment");
+
+			stockService.saveProductToCategory("Iphone14", "Apple");
+			stockService.saveProductToCategory("Iphone13", "Apple");
+			stockService.saveProductToCategory("HuaweiP50", "Smartphones");
+			stockService.saveProductToCategory("SamsungGS8", "Samsung");
+			stockService.saveProductToCategory("AppleAirPodsPro", "Headphones");
+			stockService.saveProductToCategory("YandexStation", "PortableSpeakers");
 		};
 	}
 }

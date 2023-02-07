@@ -9,7 +9,7 @@ import javax.validation.constraints.Size;
 import java.util.List;
 
 @Data
-public class OrderRequest {
+public class PlaceOrderRequest {
     @NotBlank
     @Size(max = 50)
     @Email

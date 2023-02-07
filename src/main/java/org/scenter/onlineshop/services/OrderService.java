@@ -47,16 +47,18 @@ public class OrderService {
         return totalSum;
     }
 
+    public List<Ordering> getAllOrders() {return orderingRepo.findAll();}
+    public List<Ordering> getAllOrdersByEmail(String email) {return orderingRepo.findAllByUserEmail(email);}
     @Transactional
     public void saveSaleProducts(List<SaleProduct> order){
         saleProductRepo.saveAll(order);
     }
-
     @Transactional
     public void saveOrdering(Ordering order){
         orderingRepo.save(order);
     }
-
     @Transactional
-    public void saveProduct(Product product) {productRepo.save(product);}
+    public void closeOrdering(Long orderId){
+        orderingRepo.deleteById(orderId);
+    }
 }

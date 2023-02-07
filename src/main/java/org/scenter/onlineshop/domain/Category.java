@@ -5,14 +5,10 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 
 import static javax.persistence.GenerationType.AUTO;
 import static javax.persistence.FetchType.EAGER;
-
-/*
-    TODO Определить отношение у categories&products
-*/
 
 @Entity
 @Data
@@ -21,9 +17,9 @@ public class Category {
     @Id @GeneratedValue(strategy = AUTO)
     private Long id;
     private String name;
+    private String title;
+    private Long parentId;
     @OneToMany(fetch = EAGER)
-    private Collection<Category> categories = new ArrayList<>();
-    @OneToMany(fetch = EAGER)
-    private Collection<Product> products = new ArrayList<>();
+    private List<Product> products = new ArrayList<>();
 
 }

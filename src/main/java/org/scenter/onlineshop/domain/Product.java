@@ -19,6 +19,7 @@ public class Product {
     @GeneratedValue(strategy = AUTO)
     private Long id;
     private String name;
+    private String title;
     private Float price;
     private Integer amount;
 }
