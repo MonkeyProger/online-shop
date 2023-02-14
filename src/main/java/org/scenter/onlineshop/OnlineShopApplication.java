@@ -40,13 +40,13 @@ public class OnlineShopApplication {
 			admin.setRoles(allRoles);
 			userDetailsService.saveUser(admin);
 
-			stockService.saveProduct(new Product(null, "Iphone14","Смартфон Apple IPhone 14", 50.50f, 100));
-			stockService.saveProduct(new Product(null, "Iphone13","Смартфон Apple IPhone 13", 25.25f, 4));
-			stockService.saveProduct(new Product(null,"SamsungGS8","Смартфон Samsung Galaxy S8",25f,200));
-			stockService.saveProduct(new Product(null,"HuaweiP50","Смартфон Huawei P50",23f,200));
-			stockService.saveProduct(new Product(null,"AppleAirPodsPro","Наушники Apple AirPods Pro",15f,200));
-			stockService.saveProduct(new Product(null,"CaseHuaweiP50","Наушники Apple AirPods Pro",15f,200));
-			stockService.saveProduct(new Product(null,"YandexStation","Умная колонка Яндекс Станция",20f,200));
+			stockService.saveProduct(new Product(null, "Iphone14","Смартфон Apple IPhone 14",null, 50.50f, 100));
+			stockService.saveProduct(new Product(null, "Iphone13","Смартфон Apple IPhone 13",null, 25.25f, 4));
+			stockService.saveProduct(new Product(null,"SamsungGS8","Смартфон Samsung Galaxy S8",null,25f,200));
+			stockService.saveProduct(new Product(null,"HuaweiP50","Смартфон Huawei P50",null,23f,200));
+			stockService.saveProduct(new Product(null,"AppleAirPodsPro","Наушники Apple AirPods Pro",null,15f,200));
+			stockService.saveProduct(new Product(null,"CaseHuaweiP50","Наушники Apple AirPods Pro",null,15f,200));
+			stockService.saveProduct(new Product(null,"YandexStation","Умная колонка Яндекс Станция",null,20f,200));
 
 			stockService.saveCategory(new Category(null,"Smartphones","Смартфоны",null,new ArrayList<>()));
 			stockService.saveCategory(new Category(null,"Apple","Apple", null,new ArrayList<>()));
