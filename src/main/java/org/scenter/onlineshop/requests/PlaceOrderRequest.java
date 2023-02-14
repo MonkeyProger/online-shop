@@ -6,7 +6,7 @@ import org.scenter.onlineshop.domain.SaleProduct;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
-import java.util.List;
+import java.util.Set;
 
 @Data
 public class PlaceOrderRequest {
@@ -15,5 +15,5 @@ public class PlaceOrderRequest {
     @Email
     private String email;
 
-    private List<SaleProduct> order;
+    private Set<SaleProduct> order;
 }
