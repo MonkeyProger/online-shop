@@ -65,7 +65,10 @@ public class StockController {
     public ResponseEntity<?> getAllProducts() {
         return ResponseEntity.ok().body(stockService.getAllProducts());
     }
-
+    @GetMapping("/{category}/products")
+    public ResponseEntity<?> getProductsByCategory(@PathVariable String category) {
+        return ResponseEntity.ok().body(stockService.getProductsByCategory(category));
+    }
     @GetMapping("/allCategories")
     public ResponseEntity<?> getAllCategories() {
         return ResponseEntity.ok().body(stockService.getAllCategories());

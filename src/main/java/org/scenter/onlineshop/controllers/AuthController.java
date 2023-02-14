@@ -11,6 +11,7 @@ import org.scenter.onlineshop.responses.JWTResponse;
 import org.scenter.onlineshop.responses.MessageResponse;
 import org.scenter.onlineshop.security.JWTUtils;
 import org.scenter.onlineshop.services.UserDetailsImpl;
+import org.scenter.onlineshop.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -33,23 +34,20 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/auth")
 public class AuthController {
     @Autowired
-    AuthenticationManager authenticationManager;
-
+    UserDetailsServiceImpl userService;
     @Autowired
     UserRepo userRepo;
-
     @Autowired
     RoleRepo roleRepo;
-
     @Autowired
     PasswordEncoder encoder;
-
     @Autowired
     JWTUtils jwtUtils;
+    @Autowired
+    AuthenticationManager authenticationManager;
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
 
@@ -76,45 +74,47 @@ public class AuthController {
                     .badRequest()
                     .body(new MessageResponse("Error: Email is already in use!"));
         }
-
-        // Create new user's account
         AppUser user = new AppUser(signUpRequest.getName(),
                 signUpRequest.getSurname(),
                 signUpRequest.getEmail(),
                 encoder.encode(signUpRequest.getPassword()));
+        Set<String> strRoles = signUpRequest.getRoles();
 
-        Set<String> strRoles = signUpRequest.getRole();
+        user.setRoles(buildRoles(strRoles));
+        userRepo.save(user);
+
+        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+    }
+
+
+    private Role findRole (ERole enumRole){
+        return roleRepo.findByName(enumRole)
+                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+    }
+    private Set<Role> buildRoles (Set<String> strRoles){
         Set<Role> roles = new HashSet<>();
 
         if (strRoles == null) {
-            Role userRole = roleRepo.findByName(ERole.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+            Role userRole = findRole(ERole.ROLE_USER);
             roles.add(userRole);
         } else {
             strRoles.forEach(role -> {
                 switch (role) {
                     case "admin" -> {
-                        Role adminRole = roleRepo.findByName(ERole.ROLE_ADMIN)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                        Role adminRole = findRole(ERole.ROLE_ADMIN);
                         roles.add(adminRole);
                     }
                     case "mod" -> {
-                        Role modRole = roleRepo.findByName(ERole.ROLE_MODERATOR)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                        Role modRole = findRole(ERole.ROLE_MODERATOR);
                         roles.add(modRole);
                     }
                     default -> {
-                        Role userRole = roleRepo.findByName(ERole.ROLE_USER)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                        Role userRole = findRole(ERole.ROLE_USER);
                         roles.add(userRole);
                     }
                 }
             });
         }
-
-        user.setRoles(roles);
-        userRepo.save(user);
-
-        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+        return roles;
     }
 }

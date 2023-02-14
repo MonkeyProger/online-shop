@@ -82,11 +82,7 @@ public class ShopService {
         saveOrdering(order);
         log.info("Order processed successfully..");
 
-        OrderResponse orderResponse = new OrderResponse();
-        orderResponse.setAmount(cartCost);
-        orderResponse.setDate(new Date().toString());
-        orderResponse.setId(order.getId());
-
+        OrderResponse orderResponse = new OrderResponse(cartCost,new Date().toString(),order.getId());
         return ResponseEntity.ok(orderResponse);
     }
 
