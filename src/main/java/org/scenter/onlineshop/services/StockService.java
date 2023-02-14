@@ -164,6 +164,10 @@ public class StockService {
         childCategory.setParentId(parentCategory.getId());
         saveCategory(childCategory);
     }
+    public List<Product> getProductsByCategory(String categoryName){
+        Category category = getCategoryByName(categoryName);
+        return category.getProducts();
+    }
 
 
     @Transactional
