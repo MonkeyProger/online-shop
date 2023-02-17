@@ -8,6 +8,7 @@ import org.scenter.onlineshop.services.StockService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 
@@ -22,13 +23,14 @@ public class StockController {
     @PostMapping("/{product}/postComment")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> postComment(@PathVariable String product,
-                                         @Valid @RequestBody CommentRequest commentRequest) {
+                                         @Valid @RequestPart CommentRequest commentRequest,
+                                         @RequestPart MultipartFile[] files) {
         if (!stockService.isAuthorized(commentRequest.getUserEmail())){
             return ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Access denied: Not enough rights for this action!"));
         }
-        return stockService.postComment(commentRequest,product);
+        return stockService.postComment(commentRequest,product,files);
     }
 
     @DeleteMapping("/{product}/deleteComment")
@@ -50,6 +52,11 @@ public class StockController {
         return stockService.deleteComment(commentRequest.getCommentId(),product);
     }
 
+    @GetMapping("/files/{id}")
+    public ResponseEntity<byte[]> getFile(@PathVariable String id) {
+        return stockService.getFile(id);
+    }
+
     @GetMapping ("/{userEmail}/getUserComments")
     @PreAuthorize("hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getCommentsByUserId(@PathVariable String userEmail) {
@@ -65,6 +72,7 @@ public class StockController {
     public ResponseEntity<?> getAllProducts() {
         return ResponseEntity.ok().body(stockService.getAllProducts());
     }
+
     @GetMapping("/{category}/products")
     public ResponseEntity<?> getProductsByCategory(@PathVariable String category) {
         return ResponseEntity.ok().body(stockService.getProductsByCategory(category));

@@ -2,24 +2,21 @@ package org.scenter.onlineshop.services;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.scenter.onlineshop.domain.Category;
-import org.scenter.onlineshop.domain.Comment;
-import org.scenter.onlineshop.domain.Product;
+import org.scenter.onlineshop.domain.*;
 import org.scenter.onlineshop.repo.CategoryRepo;
 import org.scenter.onlineshop.repo.CommentRepo;
 import org.scenter.onlineshop.repo.ProductRepo;
 import org.scenter.onlineshop.repo.UserRepo;
 import org.scenter.onlineshop.requests.CommentRequest;
 import org.scenter.onlineshop.responses.MessageResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -29,6 +26,7 @@ public class StockService {
     private ProductRepo productRepo;
     private CommentRepo commentRepo;
     private UserRepo userRepo;
+    private FileStorageService fileStorageService;
 
     // ====================== Product management =========================
     public List<Product> getAllProducts(){
@@ -60,7 +58,9 @@ public class StockService {
         return Objects.equals(email, username);
     }
 
-    public ResponseEntity<?> postComment(CommentRequest commentRequest, String productName){
+    public ResponseEntity<?> postComment(CommentRequest commentRequest,
+                                         String productName,
+                                         MultipartFile[] files){
         if (!userRepo.existsByEmail(commentRequest.getUserEmail())){
             log.error("User with id " + commentRequest.getUserEmail() + "not found");
             return ResponseEntity
@@ -68,7 +68,7 @@ public class StockService {
                     .body(new MessageResponse("User with email " + commentRequest.getUserEmail() + "not found"));
         }
 
-        Comment comment = new Comment(null, commentRequest.getComment(),
+        Comment comment = new Comment(commentRequest.getComment(),
                 commentRequest.getRating(),commentRequest.getUserEmail());
         Product product = getProductByName(productName);
         List<Comment> comments = product.getComments();
@@ -79,6 +79,33 @@ public class StockService {
                     .body(new MessageResponse("Comment has already been added to product: "+productName));
         }
 
+        // Сохранение файлов в бд
+        if (!fileStorageService.checkImages(files)){
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Wrong format of images."));
+        }
+
+        if (files.length > 0 && files.length <= 10)
+        {
+            List<FileDB> filesDB;
+            try {
+                filesDB = fileStorageService.saveFilesDB(files);
+            } catch (Exception e) {
+                return ResponseEntity
+                        .badRequest()
+                        .body(new MessageResponse("Error: Fail to upload files :" + e.getMessage()));
+            }
+            // Задание списка пользовательских фотографий комментарию
+            List<ResponseFile> commentFiles = new ArrayList<>();
+            filesDB.forEach(file -> commentFiles.add(fileStorageService.saveResponsefile(file)));
+            comment.setImages(commentFiles);
+        } else {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Too many files to upload."));
+        }
+
         comments.add(comment);
         product.setComments(comments);
         saveComment(comment);
@@ -86,6 +113,15 @@ public class StockService {
         return ResponseEntity.ok(new MessageResponse("Comment "+comment.getId().toString()+
                 " added to product "+productName+" successfully"));
     }
+
+    public ResponseEntity<byte[]> getFile(String id){
+        FileDB fileDB = fileStorageService.getFile(id);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"" + fileDB.getName() + "\"")
+                .body(fileDB.getData());
+    };
 
     public ResponseEntity<?>  deleteComment(Long commentId, String productName){
         Optional<Comment> comment = commentRepo.findById(commentId);

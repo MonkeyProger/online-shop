@@ -8,6 +8,9 @@ import org.hibernate.validator.constraints.Range;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import java.util.ArrayList;
+import java.util.List;
 
 import static javax.persistence.GenerationType.AUTO;
 
@@ -23,7 +26,14 @@ public class Comment {
     @Range(min = 1, max = 5)
     private Integer rating;
     private String userEmail;
+    @ManyToMany
+    private List<ResponseFile> images = new ArrayList<>();
 
+    public Comment (String text, Integer rating, String userEmail) {
+        this.text = text;
+        this.rating = rating;
+        this.userEmail = userEmail;
+    }
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
