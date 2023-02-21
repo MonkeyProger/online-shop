@@ -2,7 +2,6 @@ package org.scenter.onlineshop.controllers;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.scenter.onlineshop.repo.OrderingRepo;
 import org.scenter.onlineshop.requests.CloseOrderRequest;
 import org.scenter.onlineshop.requests.PlaceOrderRequest;
 import org.scenter.onlineshop.services.ShopService;

@@ -30,6 +30,7 @@ public class ShopService {
     private OrderingRepo orderingRepo;
     private SaleProductRepo saleProductRepo;
     private ProductRepo productRepo;
+    private EmailService emailService;
 
     public float getCartCost(Set<SaleProduct> productSet){
         float totalSum = 0f;
@@ -44,6 +45,7 @@ public class ShopService {
                 if (product.getAmount() < cartProduct.getAmount()){
                     currentSum = product.getPrice() * product.getAmount();
                     cartProduct.setAmount(product.getAmount());
+                    saleProductRepo.save(cartProduct);
                 } else {
                     currentSum = product.getPrice() * cartProduct.getAmount();
                     newAmount = product.getAmount() - cartProduct.getAmount();
@@ -80,6 +82,7 @@ public class ShopService {
         Ordering order = new Ordering(null, user.get().getEmail(), cart, cartCost);
         saveSaleProducts(cart);
         saveOrdering(order);
+        log.info(emailService.sendOrderToEmail(order.getCart(),cartCost,user.get().getEmail()));
         log.info("Order processed successfully..");
 
         OrderResponse orderResponse = new OrderResponse(cartCost,new Date().toString(),order.getId());
