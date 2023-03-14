@@ -27,5 +27,6 @@ public class Product {
     @OneToMany(fetch = EAGER)
     private List<Comment> comments = new ArrayList<>();
     private Float price;
+    private Float salePrice;
     private Integer amount;
 }

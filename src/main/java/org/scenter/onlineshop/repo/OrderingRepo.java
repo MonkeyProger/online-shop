@@ -11,4 +11,8 @@ import java.util.Optional;
 public interface OrderingRepo extends JpaRepository<Ordering,Long> {
     Optional<Ordering> findById(Long id);
     List<Ordering> findAllByUserEmail(String email);
+    List<Ordering> findAllByActiveIsTrue();
+
+    List<Ordering> findAllByUserEmailAndActiveIsTrue(String email);
+    List<Ordering> findAllByUserEmailAndActiveIsFalse(String email);
 }

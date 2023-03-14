@@ -4,9 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scenter.onlineshop.requests.CloseOrderRequest;
 import org.scenter.onlineshop.requests.PlaceOrderRequest;
+import org.scenter.onlineshop.responses.MessageResponse;
 import org.scenter.onlineshop.services.ShopService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -27,22 +27,23 @@ public class ShopController {
         return shopService.closeOrder(closeOrderRequest);
     }
 
-
-    @GetMapping("/saleProducts")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> getSaleProducts(){
-        return ResponseEntity.ok().body(shopService.getAllSaleProducts());
+    @GetMapping("/getUserActiveOrders/{userEmail}")
+    public ResponseEntity<?> getUserActiveOrders(@PathVariable String userEmail) {
+        if (!shopService.isAuthorized(userEmail)) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Access denied: Not enough rights for this action!"));
+        }
+        return ResponseEntity.ok(shopService.getActiveUserOrders(userEmail));
     }
 
-    @GetMapping("/allOrders")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> getAllOrders(){
-        return ResponseEntity.ok().body(shopService.getAllOrders());
+    @GetMapping("/getUserClosedOrders/{userEmail}")
+    public ResponseEntity<?> getUserClosedOrders(@PathVariable String userEmail){
+        if (!shopService.isAuthorized(userEmail)) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Access denied: Not enough rights for this action!"));
+        }
+        return ResponseEntity.ok(shopService.getClosedUserOrders(userEmail));
     }
-    @GetMapping("/allOrders={email}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> getAllOrdersByEmail(@PathVariable String email){
-        return ResponseEntity.ok().body(shopService.getAllOrdersByEmail(email));
-    }
-
 }

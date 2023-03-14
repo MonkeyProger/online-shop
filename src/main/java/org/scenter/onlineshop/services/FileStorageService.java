@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 @Service
@@ -56,7 +57,8 @@ public class FileStorageService {
     }
 
     public FileDB getFile(String id) {
-        return fileRepo.findById(id).get();
+        Optional<FileDB> fileDB = fileRepo.findById(id);
+        return fileDB.orElse(null);
     }
 
     public Stream<FileDB> getAllFiles() {

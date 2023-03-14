@@ -114,9 +114,11 @@ public class StockService {
                 " added to product "+productName+" successfully"));
     }
 
-    public ResponseEntity<byte[]> getFile(String id){
+    public ResponseEntity<?> getFile(String id){
         FileDB fileDB = fileStorageService.getFile(id);
-
+        if (fileDB == null) return ResponseEntity
+                .badRequest()
+                .body(new MessageResponse("File with id "+id+" is not presented"));;
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=\"" + fileDB.getName() + "\"")
@@ -212,6 +214,8 @@ public class StockService {
     public void deleteComment(Comment comment) {commentRepo.delete(comment);}
     @Transactional
     public void saveProduct(Product product) {productRepo.save(product);}
+    @Transactional
+    public void saveAllProducts(Set<Product> products) {productRepo.saveAll(products);}
     @Transactional
     public void saveCategory(Category category) {categoryRepo.save(category);}
 }
