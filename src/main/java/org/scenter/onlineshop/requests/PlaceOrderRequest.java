@@ -14,6 +14,6 @@ public class PlaceOrderRequest {
     @Size(max = 50)
     @Email
     private String email;
-
     private Set<SaleProduct> order;
+    private Float total;
 }

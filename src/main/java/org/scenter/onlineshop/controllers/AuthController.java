@@ -81,7 +81,7 @@ public class AuthController {
         Set<String> strRoles = signUpRequest.getRoles();
 
         user.setRoles(buildRoles(strRoles));
-        userRepo.save(user);
+        userService.saveUser(user);
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }

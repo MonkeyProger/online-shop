@@ -22,4 +22,5 @@ public class Ordering {
     @ManyToMany(fetch = FetchType.EAGER)
     private Set<SaleProduct> cart = new HashSet<>();
     private Float total;
+    private boolean active;
 }

@@ -28,7 +28,7 @@ public class StockController {
         if (!stockService.isAuthorized(commentRequest.getUserEmail())){
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Access denied: Not enough rights for this action!"));
+                    .body(new MessageResponse("Access denied: To post the comment, you need to be under your account"));
         }
         return stockService.postComment(commentRequest,product,files);
     }
@@ -40,28 +40,16 @@ public class StockController {
         if (!stockService.isAuthorized(commentRequest.getUserEmail())){
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Access denied: Not enough rights for this action!"));
+                    .body(new MessageResponse("Access denied: To delete the comment, you need to be under your account"));
         }
         return stockService.deleteComment(commentRequest.getCommentId(),product);
     }
 
-    @DeleteMapping("/{product}/forceDeleteComment")
-    @PreAuthorize("hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> forceDeleteComment(@PathVariable String product,
-                                           @Valid @RequestBody CommentRequest commentRequest) {
-        return stockService.deleteComment(commentRequest.getCommentId(),product);
-    }
-
     @GetMapping("/files/{id}")
-    public ResponseEntity<byte[]> getFile(@PathVariable String id) {
+    public ResponseEntity<?> getFile(@PathVariable String id) {
         return stockService.getFile(id);
     }
 
-    @GetMapping ("/{userEmail}/getUserComments")
-    @PreAuthorize("hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> getCommentsByUserId(@PathVariable String userEmail) {
-        return ResponseEntity.ok().body(stockService.getAllCommentsByUserEmail(userEmail));
-    }
     @GetMapping ("/{product}/getComments")
     public ResponseEntity<?> getCommentsByProduct(@PathVariable String product) {
         return ResponseEntity.ok().body(stockService.getAllCommentsByProduct(product));

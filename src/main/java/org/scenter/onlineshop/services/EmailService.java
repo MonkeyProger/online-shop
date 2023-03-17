@@ -50,7 +50,7 @@ public class EmailService {
                 createItemDescription(productList,quantities) +
                 "Total order price:" + total + "\n\n" +
                 footer);
-        mailMessage.setSubject("ORDER CONFIRMATION");
+        mailMessage.setSubject("Order confirmation");
         try {
             javaMailSender.send(mailMessage);
             return "Mail sent successfully!";
