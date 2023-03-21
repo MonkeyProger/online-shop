@@ -3,7 +3,6 @@ package org.scenter.onlineshop.services;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.scenter.onlineshop.domain.Product;
 import org.scenter.onlineshop.domain.SaleProduct;
-import org.scenter.onlineshop.repo.ProductRepo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -13,13 +12,14 @@ import java.util.*;
 
 @Service
 public class EmailService {
-    private JavaMailSender javaMailSender;
-    private ProductRepo productRepo;
+    private final JavaMailSender javaMailSender;
+    private final StockService stockService;
 
-    public EmailService(JavaMailSender javaMailSender, ProductRepo productRepo){
+    public EmailService(JavaMailSender javaMailSender, StockService stockService){
         this.javaMailSender = javaMailSender;
-        this.productRepo = productRepo;
+        this.stockService = stockService;
     }
+
     @Value("${spring.mail.username}") private String sender;
     String header = """
                 Dear customer,
@@ -39,7 +39,7 @@ public class EmailService {
         List<Product> productList = new ArrayList<>();
         List<Integer> quantities = new ArrayList<>();
         cart.forEach(saleProduct -> {
-            Product product = productRepo.findById(saleProduct.getProductId()).get();
+            Product product = stockService.getProductById(saleProduct.getProductId());
             productList.add(product);
             quantities.add(saleProduct.getAmount());
         });
@@ -60,9 +60,6 @@ public class EmailService {
         }
     }
 
-    private Integer getAmount(Product product, Integer reQuantity){
-        return (product.getAmount() < reQuantity)? product.getAmount() : reQuantity;
-    }
     private String createItemDescription(List<Product> products, List<Integer> quantities){
         final String template = ": ${product}\nQuantity: ${quantity}\nPrice: ${price}\n\n";
         StringBuilder res = new StringBuilder();

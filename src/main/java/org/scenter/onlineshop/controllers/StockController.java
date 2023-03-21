@@ -44,15 +44,14 @@ public class StockController {
         }
         return stockService.deleteComment(commentRequest.getCommentId(),product);
     }
+    @GetMapping ("/{product}/getComments")
+    public ResponseEntity<?> getCommentsByProduct(@PathVariable String product) {
+        return ResponseEntity.ok().body(stockService.getAllCommentsByProduct(product));
+    }
 
     @GetMapping("/files/{id}")
     public ResponseEntity<?> getFile(@PathVariable String id) {
         return stockService.getFile(id);
-    }
-
-    @GetMapping ("/{product}/getComments")
-    public ResponseEntity<?> getCommentsByProduct(@PathVariable String product) {
-        return ResponseEntity.ok().body(stockService.getAllCommentsByProduct(product));
     }
 
     // ====================== Products/Categories management =========================

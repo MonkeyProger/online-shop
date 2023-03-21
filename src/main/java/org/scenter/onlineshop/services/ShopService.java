@@ -80,6 +80,15 @@ public class ShopService {
         return Objects.equals(email, username);
     }
 
+    public Ordering getOrderById(Long orderId) {
+        Optional<Ordering> ordering = orderingRepo.findById(orderId);
+        if (ordering.isEmpty()){
+            log.error("Order with id " + orderId + "not found");
+            throw new NoSuchElementException("Order with id " + orderId + "not found");
+        }
+        return ordering.get();
+    }
+
     public ResponseEntity<?> placeOrder(PlaceOrderRequest placeOrderRequest) {
         if (!isAuthorized(placeOrderRequest.getEmail())){
             return ResponseEntity
@@ -134,6 +143,21 @@ public class ShopService {
         log.info("Order closed successfully..");
         return ResponseEntity.ok(new MessageResponse("Order "+ordering.getId().toString()+" closed successfully"));
     }
+
+    public ResponseEntity<?> updateOrder(PlaceOrderRequest placeOrderRequest, Long id) {
+        Ordering ordering = getOrderById(id);
+        if (ordering == null) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Order #"+id+" is not found in database"));
+        }
+        ordering.setCart(placeOrderRequest.getOrder());
+        ordering.setTotal(placeOrderRequest.getTotal());
+        ordering.setUserEmail(placeOrderRequest.getEmail());
+        saveOrdering(ordering);
+        return ResponseEntity.ok(new MessageResponse("Order #"+id+" updated successfully"));
+    }
+
 
     public List<Ordering> getAllOrders() {return orderingRepo.findAll();}
     public List<Ordering> getAllActiveOrders() {return orderingRepo.findAllByActiveIsTrue();}

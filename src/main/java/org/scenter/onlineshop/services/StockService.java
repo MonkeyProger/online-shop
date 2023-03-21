@@ -7,7 +7,9 @@ import org.scenter.onlineshop.repo.CategoryRepo;
 import org.scenter.onlineshop.repo.CommentRepo;
 import org.scenter.onlineshop.repo.ProductRepo;
 import org.scenter.onlineshop.repo.UserRepo;
+import org.scenter.onlineshop.requests.CategoryRequest;
 import org.scenter.onlineshop.requests.CommentRequest;
+import org.scenter.onlineshop.requests.PlaceProductRequest;
 import org.scenter.onlineshop.responses.MessageResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,11 @@ public class StockService {
     private CommentRepo commentRepo;
     private UserRepo userRepo;
     private FileStorageService fileStorageService;
+
+    public boolean isAuthorized(String email){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return Objects.equals(email, username);
+    }
 
     // ====================== Product management =========================
     public List<Product> getAllProducts(){
@@ -51,13 +58,29 @@ public class StockService {
         return product.get();
     }
 
-    // ====================== Comment management =========================
-
-    public boolean isAuthorized(String email){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return Objects.equals(email, username);
+    public ResponseEntity<?> placeProduct (PlaceProductRequest placeProductRequest){
+        Product product = new Product(null, placeProductRequest.getName(), placeProductRequest.getTitle(),null,
+                placeProductRequest.getPrice(),placeProductRequest.getSalePrice(), placeProductRequest.getAmount());
+        saveProduct(product);
+        return ResponseEntity.ok(new MessageResponse("Product added successfully"));
     }
-
+    public ResponseEntity<?> updateProduct(Long productId, PlaceProductRequest placeProductRequest){
+        Product product = getProductById(productId);
+        Boolean saveComments = placeProductRequest.getSaveComments();
+        if (saveComments == null || !saveComments ) {
+            List<Comment> comments = product.getComments();
+            product.setComments(new ArrayList<>());
+            deleteComments(comments);
+        }
+        product.setAmount(placeProductRequest.getAmount());
+        product.setName(placeProductRequest.getName());
+        product.setPrice(placeProductRequest.getPrice());
+        product.setTitle(placeProductRequest.getTitle());
+        product.setSalePrice(placeProductRequest.getSalePrice());
+        saveProduct(product);
+        return ResponseEntity.ok(new MessageResponse("Product updated successfully"));
+    }
+    // ====================== Comment management =========================
     public ResponseEntity<?> postComment(CommentRequest commentRequest,
                                          String productName,
                                          MultipartFile[] files){
@@ -118,12 +141,12 @@ public class StockService {
         FileDB fileDB = fileStorageService.getFile(id);
         if (fileDB == null) return ResponseEntity
                 .badRequest()
-                .body(new MessageResponse("File with id "+id+" is not presented"));;
+                .body(new MessageResponse("File with id "+id+" is not presented"));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=\"" + fileDB.getName() + "\"")
                 .body(fileDB.getData());
-    };
+    }
 
     public ResponseEntity<?>  deleteComment(Long commentId, String productName){
         Optional<Comment> comment = commentRepo.findById(commentId);
@@ -151,6 +174,15 @@ public class StockService {
         return ResponseEntity.ok(new MessageResponse("Comment "+repoComment.getId().toString()+
                 " deleted successfully"));
     }
+    public ResponseEntity<?> deleteProductComments(String productName){
+        Product product = getProductByName(productName);
+        List<Comment> comments = product.getComments();
+        product.setComments(new ArrayList<>());
+        deleteComments(comments);
+        saveProduct(product);
+        return ResponseEntity.ok(new MessageResponse("Comments of the product "+productName+
+                " cleared successfully"));
+    }
 
     public List<Comment> getAllCommentsByUserEmail(String email){
         return commentRepo.findAllByUserEmail(email);
@@ -176,7 +208,7 @@ public class StockService {
     }
     public Category getCategoryByName(String categoryName) {
         Optional<Category> category = categoryRepo.findByName(categoryName);
-        if (category.isEmpty()){
+        if (category.isEmpty()) {
             log.error("Category with name " + categoryName + "not found");
             throw new NoSuchElementException("Category with name " + categoryName + "not found");
         }
@@ -196,26 +228,87 @@ public class StockService {
         category.setProducts(oldProducts);
         saveCategory(category);
     }
+    public Category saveProductToCategory(Long productId, Long categoryId){
+        Category category = getCategoryById(categoryId);
+        Product product = getProductById(productId);
+        List<Product> oldProducts = category.getProducts();
+        if (oldProducts.contains(product)) {
+            log.error("Product '{}' is already in category '{}'", productId,categoryId);
+            throw new IllegalArgumentException("Product is already in category");
+        }
+        oldProducts.add(product);
+        category.setProducts(oldProducts);
+        return saveCategory(category);
+    }
     public void saveParentToCategory(String child, String parent){
         Category parentCategory = getCategoryByName(parent);
         Category childCategory = getCategoryByName(child);
         childCategory.setParentId(parentCategory.getId());
         saveCategory(childCategory);
     }
+    public Category saveParentToCategory(Long child, Long parent){
+        Category parentCategory = getCategoryById(parent);
+        Category childCategory = getCategoryById(child);
+        childCategory.setParentId(parentCategory.getId());
+        return saveCategory(childCategory);
+    }
     public List<Product> getProductsByCategory(String categoryName){
         Category category = getCategoryByName(categoryName);
         return category.getProducts();
     }
 
+    public ResponseEntity<?> placeCategory(CategoryRequest categoryRequest){
+        Category category = new Category(null, categoryRequest.getName(),categoryRequest.getTitle(),
+                categoryRequest.getParentId(),null);
+        List<Product> products = new ArrayList<>();
+        for (String productName : categoryRequest.getProducts()) {
+            Product product = getProductByName(productName);
+            if (product != null) products.add(product);
+        }
+        category.setProducts(products);
+        saveCategory(category);
+        return ResponseEntity.ok(new MessageResponse("Category: "+category.getName()+" created successfully"));
+    }
+
+    public ResponseEntity<?> updateCategory(Long categoryId, CategoryRequest categoryRequest){
+        Category category = getCategoryById(categoryId);
+        List<Product> products = new ArrayList<>();
+        for (String productName : categoryRequest.getProducts()) {
+            Product product = getProductByName(productName);
+            if (product != null) products.add(product);
+        }
+        category.setName(categoryRequest.getName());
+        category.setTitle(categoryRequest.getTitle());
+        category.setParentId(categoryRequest.getParentId());
+        category.setProducts(products);
+        saveCategory(category);
+        return ResponseEntity.ok(new MessageResponse("Category: "+category.getName()+" created successfully"));
+    }
+    public ResponseEntity<?> deleteCategory(Long categoryId){
+        Category category = getCategoryById(categoryId);
+        Long parentId = category.getParentId();
+        Set<Category> childCategories = categoryRepo.findAllByParentId(categoryId);
+        for (Category childCategory : childCategories) {
+            childCategory.setParentId(parentId);
+            saveCategory(childCategory);
+        }
+        deleteCategory(category);
+        return ResponseEntity.ok(new MessageResponse("Category: "+category.getName()+" deleted successfully"));
+    }
 
     @Transactional
     public void saveComment(Comment comment) {commentRepo.save(comment);}
     @Transactional
     public void deleteComment(Comment comment) {commentRepo.delete(comment);}
     @Transactional
+    public void deleteComments(List<Comment> comments) {commentRepo.deleteAll(comments);}
+    @Transactional
     public void saveProduct(Product product) {productRepo.save(product);}
     @Transactional
     public void saveAllProducts(Set<Product> products) {productRepo.saveAll(products);}
+
     @Transactional
-    public void saveCategory(Category category) {categoryRepo.save(category);}
+    public void deleteCategory(Category category) {categoryRepo.delete(category);}
+    @Transactional
+    public Category saveCategory(Category category) {return categoryRepo.save(category);}
 }
