@@ -1,5 +1,6 @@
 package org.scenter.onlineshop.controllers;
 
+import lombok.AllArgsConstructor;
 import org.scenter.onlineshop.domain.AppUser;
 import org.scenter.onlineshop.domain.ERole;
 import org.scenter.onlineshop.domain.Role;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,13 +34,14 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
+@AllArgsConstructor
 public class AuthController {
-    @Autowired
-    UserDetailsServiceImpl userService;
     @Autowired
     UserRepo userRepo;
     @Autowired
     RoleRepo roleRepo;
+    @Autowired
+    UserDetailsServiceImpl userDetailsService;
     @Autowired
     PasswordEncoder encoder;
     @Autowired
@@ -81,12 +84,10 @@ public class AuthController {
         Set<String> strRoles = signUpRequest.getRoles();
 
         user.setRoles(buildRoles(strRoles));
-        userService.saveUser(user);
+        userDetailsService.saveUser(user);
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
-
-
     private Role findRole (ERole enumRole){
         return roleRepo.findByName(enumRole)
                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
@@ -94,10 +95,10 @@ public class AuthController {
     private Set<Role> buildRoles (Set<String> strRoles){
         Set<Role> roles = new HashSet<>();
 
-        if (strRoles == null) {
-            Role userRole = findRole(ERole.ROLE_USER);
-            roles.add(userRole);
-        } else {
+//        if (strRoles == null) {
+//            Role userRole = findRole(ERole.ROLE_USER);
+//            roles.add(userRole);
+//        } else {
             strRoles.forEach(role -> {
                 switch (role) {
                     case "admin" -> {
@@ -108,13 +109,29 @@ public class AuthController {
                         Role modRole = findRole(ERole.ROLE_MODERATOR);
                         roles.add(modRole);
                     }
-                    default -> {
-                        Role userRole = findRole(ERole.ROLE_USER);
-                        roles.add(userRole);
-                    }
                 }
             });
-        }
+            Role userRole = findRole(ERole.ROLE_USER);
+            roles.add(userRole);
+//        }
         return roles;
+    }
+
+    public ResponseEntity<?> updateUser(@Valid SignupRequest signUpRequest, Long id) {
+        Optional<AppUser> user = userRepo.findById(id);
+        if (user.isEmpty()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("User with id "+id+" is not presented in database"));
+        }
+        AppUser userDB = user.get();
+        Set<String> strRoles = signUpRequest.getRoles();
+        userDB.setRoles(buildRoles(strRoles));
+        userDB.setName(signUpRequest.getName());
+        userDB.setSurname(signUpRequest.getSurname());
+        userDB.setEmail(signUpRequest.getEmail());
+        userDB.setPassword(encoder.encode(signUpRequest.getPassword()));
+        userDetailsService.saveUser(userDB);
+        return ResponseEntity.ok(new MessageResponse("User updated successfully!"));
     }
 }
