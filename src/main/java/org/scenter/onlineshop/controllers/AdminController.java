@@ -2,17 +2,14 @@ package org.scenter.onlineshop.controllers;
 
 import lombok.AllArgsConstructor;
 import org.scenter.onlineshop.requests.*;
-import org.scenter.onlineshop.services.AdminService;
 import org.scenter.onlineshop.services.ShopService;
 import org.scenter.onlineshop.services.StockService;
 import org.scenter.onlineshop.services.UserDetailsServiceImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.Objects;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -21,37 +18,8 @@ import java.util.Objects;
 public class AdminController {
     private StockService stockService;
     private ShopService shopService;
-    private AdminService adminService;
     private UserDetailsServiceImpl userDetailsService;
     private AuthController authController;
-
-    public boolean isAuthorized(String email){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return Objects.equals(email, username);
-    }
-    @GetMapping("/all")
-    public String allAccess() {
-        return "Public Content.";
-    }
-
-    @GetMapping("/user")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
-    public String userAccess() {
-        return "User Content.";
-    }
-
-    @GetMapping("/mod")
-    @PreAuthorize("hasRole('ROLE_MODERATOR')")
-    public String moderatorAccess() {
-        return "Moderator Board.";
-    }
-
-    @GetMapping("/admin")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public String adminAccess() {
-        return "Admin Board.";
-    }
-
 //  ====================================        User management         ================================================
     @GetMapping("/allUsers")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -91,8 +59,6 @@ public class AdminController {
     public ResponseEntity<?> getCommentsByUserEmail(@PathVariable String userEmail) {
         return ResponseEntity.ok().body(stockService.getAllCommentsByUserEmail(userEmail));
     }
-
-    // TODO Files {delete}
 
     //  =============================        Products management         ====================================
 
