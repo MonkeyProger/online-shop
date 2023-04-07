@@ -2,8 +2,6 @@ package org.scenter.onlineshop.services;
 
 import lombok.extern.slf4j.Slf4j;
 import org.scenter.onlineshop.domain.AppUser;
-import org.scenter.onlineshop.domain.Role;
-import org.scenter.onlineshop.repo.RoleRepo;
 import org.scenter.onlineshop.repo.UserRepo;
 import org.scenter.onlineshop.responses.MessageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,10 +17,9 @@ import java.util.List;
 @Service
 @Slf4j
 public class UserDetailsServiceImpl implements UserDetailsService {
+
     @Autowired
     UserRepo userRepo;
-    @Autowired
-    RoleRepo roleRepo;
 
     @Override
     @Transactional
@@ -43,11 +40,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         }
         deleteUser(userId);
         return ResponseEntity.ok(new MessageResponse("User deleted successfully!"));
-    }
-
-    @Transactional
-    public void saveRole(Role role){
-        roleRepo.save(role);
     }
 
     @Transactional

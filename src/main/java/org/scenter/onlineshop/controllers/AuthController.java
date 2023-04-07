@@ -3,9 +3,8 @@ package org.scenter.onlineshop.controllers;
 import lombok.AllArgsConstructor;
 import org.scenter.onlineshop.domain.AppUser;
 import org.scenter.onlineshop.domain.ERole;
-import org.scenter.onlineshop.domain.Role;
-import org.scenter.onlineshop.repo.RoleRepo;
 import org.scenter.onlineshop.repo.UserRepo;
+import org.scenter.onlineshop.requests.AdminSignupRequest;
 import org.scenter.onlineshop.requests.LoginRequest;
 import org.scenter.onlineshop.requests.SignupRequest;
 import org.scenter.onlineshop.responses.JWTResponse;
@@ -24,10 +23,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -38,8 +35,6 @@ import java.util.stream.Collectors;
 public class AuthController {
     @Autowired
     UserRepo userRepo;
-    @Autowired
-    RoleRepo roleRepo;
     @Autowired
     UserDetailsServiceImpl userDetailsService;
     @Autowired
@@ -77,63 +72,58 @@ public class AuthController {
                     .badRequest()
                     .body(new MessageResponse("Error: Email is already in use!"));
         }
-        AppUser user = new AppUser(signUpRequest.getName(),
+
+        ERole role;
+        if (signUpRequest instanceof AdminSignupRequest) {
+            role = getERole(((AdminSignupRequest) signUpRequest).getRole());
+        } else {
+            role = ERole.ROLE_USER;
+        }
+
+        AppUser user = new AppUser(
+                signUpRequest.getName(),
                 signUpRequest.getSurname(),
                 signUpRequest.getEmail(),
-                encoder.encode(signUpRequest.getPassword()));
-        Set<String> strRoles = signUpRequest.getRoles();
+                encoder.encode(signUpRequest.getPassword()),
+                role);
 
-        user.setRoles(buildRoles(strRoles));
         userDetailsService.saveUser(user);
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
 
-    private Role findRole(ERole enumRole) {
-        return roleRepo.findByName(enumRole)
-                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-    }
-
-    private Set<Role> buildRoles(Set<String> strRoles) {
-        Set<Role> roles = new HashSet<>();
-
-        if (strRoles == null) {
-            Role userRole = findRole(ERole.ROLE_USER);
-            roles.add(userRole);
-        } else {
-            strRoles.forEach(role -> {
-                switch (role) {
-                    case "admin":
-                        Role adminRole = findRole(ERole.ROLE_ADMIN);
-                        roles.add(adminRole);
-                        break;
-                    case "mod":
-                        Role modRole = findRole(ERole.ROLE_MODERATOR);
-                        roles.add(modRole);
-                        break;
-                }
-            });
-            Role userRole = findRole(ERole.ROLE_USER);
-            roles.add(userRole);
+    private ERole getERole(String role) {
+        if (role == null) {
+            return ERole.ROLE_USER;
         }
-        return roles;
+        switch (role) {
+            case "admin":
+                return ERole.ROLE_ADMIN;
+            case "user":
+                return ERole.ROLE_USER;
+            default:
+                throw new EnumConstantNotPresentException(ERole.class, "No such role: " + role);
+        }
     }
 
-    public ResponseEntity<?> updateUser(@Valid SignupRequest signUpRequest, Long id) {
+    public ResponseEntity<?> updateUser(@Valid AdminSignupRequest signUpRequest, Long id) {
         Optional<AppUser> user = userRepo.findById(id);
         if (!user.isPresent()) {
             return ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("User with id " + id + " is not presented in database"));
         }
-        AppUser userDB = user.get();
-        Set<String> strRoles = signUpRequest.getRoles();
-        userDB.setRoles(buildRoles(strRoles));
-        userDB.setName(signUpRequest.getName());
-        userDB.setSurname(signUpRequest.getSurname());
-        userDB.setEmail(signUpRequest.getEmail());
-        userDB.setPassword(encoder.encode(signUpRequest.getPassword()));
-        userDetailsService.saveUser(userDB);
+
+        AppUser updatedUser = user.get();
+        ERole role = getERole(signUpRequest.getRole());
+        updatedUser.setRole(role);
+        updatedUser.setName(signUpRequest.getName());
+        updatedUser.setSurname(signUpRequest.getSurname());
+        updatedUser.setEmail(signUpRequest.getEmail());
+        updatedUser.setPassword(encoder.encode(signUpRequest.getPassword()));
+
+        userDetailsService.saveUser(updatedUser);
+
         return ResponseEntity.ok(new MessageResponse("User updated successfully!"));
     }
 }

@@ -1,19 +1,15 @@
 package org.scenter.onlineshop.domain;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
 
 import static javax.persistence.GenerationType.AUTO;
-import static javax.persistence.FetchType.EAGER;
 
 @Entity
 @Data
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor
 public class AppUser {
 
     @Id @GeneratedValue(strategy = AUTO)
@@ -27,13 +23,14 @@ public class AppUser {
 
     private String password;
 
-    @ManyToMany(fetch = EAGER)
-    private Set<Role> roles = new HashSet<>();
+    @Enumerated(EnumType.STRING)
+    private ERole role;
 
-    public AppUser(String name, String surname, String email, String password) {
+    public AppUser(String name, String surname, String email, String password, ERole role) {
         this.name = name;
         this.surname = surname;
         this.email = email;
         this.password = password;
+        this.role = role;
     }
 }
