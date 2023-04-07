@@ -19,8 +19,10 @@ public class SaleProduct{
     @Id
     @GeneratedValue(strategy = AUTO)
     private Long id;
+
     @NaturalId
     private Long productId;
+
     @NaturalId
     private Integer amount;
 

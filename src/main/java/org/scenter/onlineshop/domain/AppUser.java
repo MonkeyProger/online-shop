@@ -15,12 +15,18 @@ import static javax.persistence.FetchType.EAGER;
 @Data
 @NoArgsConstructor @AllArgsConstructor
 public class AppUser {
+
     @Id @GeneratedValue(strategy = AUTO)
     private Long id;
+
     private String name;
+
     private String surname;
+
     private String email;
+
     private String password;
+
     @ManyToMany(fetch = EAGER)
     private Set<Role> roles = new HashSet<>();
 

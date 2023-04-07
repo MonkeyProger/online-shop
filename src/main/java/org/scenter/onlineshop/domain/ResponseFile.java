@@ -16,10 +16,15 @@ public class ResponseFile {
     @Id
     @GeneratedValue(strategy = AUTO)
     private Long id;
+
     private String fileDBid;
+
     private String name;
+
     private String url;
+
     private String type;
+
     private int size;
 
     public ResponseFile(String fileDBid, String name, String url, String type, int size){

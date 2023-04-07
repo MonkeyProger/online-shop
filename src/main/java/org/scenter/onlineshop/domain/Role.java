@@ -13,9 +13,11 @@ import static javax.persistence.GenerationType.IDENTITY;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Role {
+
     @Id
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
+
     @Enumerated(EnumType.STRING)
     private ERole name;
 

@@ -20,22 +20,27 @@ public class AdminController {
     private ShopService shopService;
     private UserDetailsServiceImpl userDetailsService;
     private AuthController authController;
+
 //  ====================================        User management         ================================================
+
     @GetMapping("/allUsers")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok().body(userDetailsService.getAllUsers());
     }
+
     @PostMapping("/addUser")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> addUser(@Valid @RequestBody SignupRequest signupRequest) {
         return authController.registerUser(signupRequest);
     }
+
     @PostMapping("/updateUser/{userId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateUser(@Valid @RequestBody SignupRequest signupRequest, @PathVariable Long userId) {
         return authController.updateUser(signupRequest, userId);
     }
+
     @DeleteMapping("/deleteUser/{userId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteUser(@PathVariable Long userId) {
@@ -43,17 +48,20 @@ public class AdminController {
     }
 
     //  =================================        Comments management         ===========================================
+
     @DeleteMapping("/deleteComment/{product}")
     @PreAuthorize("hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> forceDeleteComment(@PathVariable String product,
                                                 @Valid @RequestBody CommentRequest commentRequest) {
         return stockService.deleteComment(commentRequest.getCommentId(),product);
     }
+
     @DeleteMapping("/deleteComments/{product}")
     @PreAuthorize("hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> forceDeleteComments(@PathVariable String product) {
         return stockService.deleteProductComments(product);
     }
+
     @GetMapping ("/getUserComments/{userEmail}")
     @PreAuthorize("hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getCommentsByUserEmail(@PathVariable String userEmail) {
@@ -67,36 +75,42 @@ public class AdminController {
     public ResponseEntity<?> placeProduct(@Valid @RequestBody PlaceProductRequest placeProductRequest) {
         return stockService.placeProduct(placeProductRequest);
     }
+
     @PostMapping ("/updateProduct/{productId}")
     @PreAuthorize("hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateProduct(@PathVariable Long productId,
                                            @Valid @RequestBody PlaceProductRequest placeProductRequest) {
         return stockService.updateProduct(productId,placeProductRequest);
     }
+
     //  ===================================        Categories management         =======================================
+
     @PostMapping ("/placeCategory")
     @PreAuthorize("hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> placeCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
         return stockService.placeCategory(categoryRequest);
     }
+
     @PostMapping ("/updateCategory/{categoryId}")
     @PreAuthorize("hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateCategory(@PathVariable Long categoryId,
                                            @Valid @RequestBody CategoryRequest categoryRequest) {
         return stockService.updateCategory(categoryId,categoryRequest);
     }
+
     @PostMapping ("/deleteCategory/{categoryId}")
     @PreAuthorize("hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteCategory(@PathVariable Long categoryId) {
         return stockService.deleteCategory(categoryId);
     }
 
-    @PostMapping ("/link%{childId}/to%{parentId}")
+    @PostMapping ("/link{childId}/to{parentId}")
     @PreAuthorize("hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> linkCategoryToParent(@PathVariable Long childId, @PathVariable Long parentId) {
         return ResponseEntity.ok().body(stockService.saveParentToCategory(childId,parentId));
     }
-    @PostMapping ("/link%{productId}/to%{categoryId}")
+
+    @PostMapping ("/link{productId}/to{categoryId}")
     @PreAuthorize("hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> linkProductToCategory(@PathVariable Long productId, @PathVariable Long categoryId) {
         return ResponseEntity.ok().body(stockService.saveProductToCategory(productId,categoryId));
@@ -104,31 +118,37 @@ public class AdminController {
     //  ===================================        Files management         ============================================
 
     //  ===================================        Order management         ============================================
+
     @GetMapping("/allOrders")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getAllOrders(){
         return ResponseEntity.ok().body(shopService.getAllOrders());
     }
+
     @GetMapping("/saleProducts")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getSaleProducts(){
         return ResponseEntity.ok().body(shopService.getAllSaleProducts());
     }
+
     @GetMapping("/allActiveOrders")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getAllActiveOrders(){
         return ResponseEntity.ok().body(shopService.getAllActiveOrders());
     }
+
     @GetMapping("/allOrders/{email}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getAllOrdersByEmail(@PathVariable String email){
         return ResponseEntity.ok().body(shopService.getAllOrdersByEmail(email));
     }
+
     @PostMapping("/updateOrder/{orderId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateOrder(@Valid @RequestBody PlaceOrderRequest placeOrderRequest, @PathVariable Long orderId){
         return ResponseEntity.ok().body(shopService.updateOrder(placeOrderRequest,orderId));
     }
+
     @DeleteMapping("/deleteOrder")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteOrder(@Valid @RequestBody CloseOrderRequest closeOrderRequest){

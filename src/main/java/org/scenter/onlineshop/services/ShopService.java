@@ -82,7 +82,7 @@ public class ShopService {
 
     public Ordering getOrderById(Long orderId) {
         Optional<Ordering> ordering = orderingRepo.findById(orderId);
-        if (ordering.isEmpty()){
+        if (!ordering.isPresent()){
             log.error("Order with id " + orderId + "not found");
             throw new NoSuchElementException("Order with id " + orderId + "not found");
         }
@@ -96,7 +96,7 @@ public class ShopService {
                     .body(new MessageResponse("Access denied: Not enough rights for this action!"));
         }
         Optional<AppUser> user = userRepo.findByEmail(placeOrderRequest.getEmail());
-        if (user.isEmpty()) {
+        if (!user.isPresent()) {
             return ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Error: Email is not presented!"));
@@ -126,7 +126,7 @@ public class ShopService {
 
     public ResponseEntity<?> closeOrder(CloseOrderRequest closeOrderRequest) {
         Optional<Ordering> order = orderingRepo.findById(closeOrderRequest.getOrderId());
-        if (order.isEmpty()) {
+        if (!order.isPresent()) {
             return ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Error: Order is not presented!"));
@@ -159,12 +159,29 @@ public class ShopService {
     }
 
 
-    public List<Ordering> getAllOrders() {return orderingRepo.findAll();}
-    public List<Ordering> getAllActiveOrders() {return orderingRepo.findAllByActiveIsTrue();}
-    public List<SaleProduct> getAllSaleProducts() {return saleProductRepo.findAll();}
-    public List<Ordering> getAllOrdersByEmail(String email) {return orderingRepo.findAllByUserEmail(email);}
-    public List<Ordering> getActiveUserOrders(String email) {return orderingRepo.findAllByUserEmailAndActiveIsTrue(email);}
-    public List<Ordering> getClosedUserOrders(String email) {return orderingRepo.findAllByUserEmailAndActiveIsFalse(email);}
+    public List<Ordering> getAllOrders() {
+        return orderingRepo.findAll();
+    }
+
+    public List<Ordering> getAllActiveOrders() {
+        return orderingRepo.findAllByActiveIsTrue();
+    }
+
+    public List<SaleProduct> getAllSaleProducts() {
+        return saleProductRepo.findAll();
+    }
+
+    public List<Ordering> getAllOrdersByEmail(String email) {
+        return orderingRepo.findAllByUserEmail(email);
+    }
+
+    public List<Ordering> getActiveUserOrders(String email) {
+        return orderingRepo.findAllByUserEmailAndActiveIsTrue(email);
+    }
+
+    public List<Ordering> getClosedUserOrders(String email) {
+        return orderingRepo.findAllByUserEmailAndActiveIsFalse(email);
+    }
 
     @Transactional
     public Set<SaleProduct> saveSaleProducts(Set<SaleProduct> cart){
@@ -174,7 +191,7 @@ public class ShopService {
                     saleProduct.getProductId(),
                     saleProduct.getAmount());
             SaleProduct prod;
-            if (sp.isEmpty()) {
+            if (!sp.isPresent()) {
                 prod = saleProductRepo.save(saleProduct);
                 updatedCart.add(prod);
             } else {
@@ -184,14 +201,17 @@ public class ShopService {
         }
         return updatedCart;
     }
+
     @Transactional
     public void saveSaleProduct(SaleProduct saleProduct){
         saleProductRepo.save(saleProduct);
     }
+
     @Transactional
     public void saveOrdering(Ordering order){
         orderingRepo.save(order);
     }
+
     @Transactional
     public void closeOrdering(Long orderId){
         orderingRepo.deleteById(orderId);

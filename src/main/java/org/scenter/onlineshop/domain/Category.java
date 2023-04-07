@@ -14,11 +14,16 @@ import static javax.persistence.FetchType.EAGER;
 @Data
 @NoArgsConstructor @AllArgsConstructor
 public class Category {
+
     @Id @GeneratedValue(strategy = AUTO)
     private Long id;
+
     private String name;
+
     private String title;
+
     private Long parentId;
+
     @OneToMany(fetch = EAGER)
     private List<Product> products = new ArrayList<>();
 

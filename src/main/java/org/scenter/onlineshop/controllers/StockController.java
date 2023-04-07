@@ -17,9 +17,11 @@ import javax.validation.Valid;
 @RequestMapping("/api/stock")
 @AllArgsConstructor
 public class StockController {
-    StockService stockService;
+
+    private StockService stockService;
 
     // ====================== Comment management =========================
+
     @PostMapping("/{product}/postComment")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_MODERATOR') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> postComment(@PathVariable String product,
@@ -64,6 +66,7 @@ public class StockController {
     public ResponseEntity<?> getProductsByCategory(@PathVariable String category) {
         return ResponseEntity.ok().body(stockService.getProductsByCategory(category));
     }
+
     @GetMapping("/allCategories")
     public ResponseEntity<?> getAllCategories() {
         return ResponseEntity.ok().body(stockService.getAllCategories());

@@ -21,17 +21,14 @@ public class EmailService {
     }
 
     @Value("${spring.mail.username}") private String sender;
-    String header = """
-                Dear customer,
+    StringBuilder header = new StringBuilder()
+            .append("Dear customer,\n\n")
+            .append("We’re happy to let you know that we’ve received your order.\n")
+            .append("Your order details can be found below.\n");
 
-                We’re happy to let you know that we’ve received your order.
-                Your order details can be found below.
-                
-                """;
-    String footer = """
-                Workshop Team
-                This is an automated message, please do not reply.
-                """;
+    StringBuilder footer = new StringBuilder()
+            .append("Workshop Team\n")
+            .append("This is an automated message, please do not reply.\n");
 
     public String sendOrderToEmail(Set<SaleProduct> cart, float total, String email){
         SimpleMailMessage mailMessage

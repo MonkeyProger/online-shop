@@ -11,12 +11,15 @@ import java.util.Set;
 
 @Data
 public class PlaceOrderRequest {
+
     @NotBlank
     @Size(max = 50)
     @Email
     private String email;
+
     @NotNull
     private Set<SaleProduct> order;
+
     @NotNull
     private Float total;
 }

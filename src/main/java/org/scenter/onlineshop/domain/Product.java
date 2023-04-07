@@ -19,14 +19,21 @@ import static javax.persistence.GenerationType.AUTO;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Product {
+
     @Id
     @GeneratedValue(strategy = AUTO)
     private Long id;
+
     private String name;
+
     private String title;
+
     @OneToMany(fetch = EAGER)
     private List<Comment> comments = new ArrayList<>();
+
     private Float price;
+
     private Float salePrice;
+
     private Integer amount;
 }

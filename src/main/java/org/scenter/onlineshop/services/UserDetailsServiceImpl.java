@@ -54,8 +54,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public void saveUser(AppUser user){
         userRepo.save(user);
     }
+
     @Transactional
-    public List<AppUser> getAllUsers(){return userRepo.findAll();}
+    public List<AppUser> getAllUsers() {
+        return userRepo.findAll();
+    }
+
     @Transactional
-    public void deleteUser(Long userId){userRepo.deleteById(userId);}
+    public void deleteUser(Long userId){
+        userRepo.deleteById(userId);
+    }
+
 }

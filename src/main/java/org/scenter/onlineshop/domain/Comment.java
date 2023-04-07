@@ -19,13 +19,18 @@ import static javax.persistence.GenerationType.AUTO;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Comment {
+
     @Id
     @GeneratedValue(strategy = AUTO)
     private Long id;
+
     private String text;
+
     @Range(min = 1, max = 5)
     private Integer rating;
+
     private String userEmail;
+
     @ManyToMany
     private List<ResponseFile> images = new ArrayList<>();
 
@@ -34,6 +39,7 @@ public class Comment {
         this.rating = rating;
         this.userEmail = userEmail;
     }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

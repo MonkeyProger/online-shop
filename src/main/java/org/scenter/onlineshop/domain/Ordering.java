@@ -18,9 +18,13 @@ public class Ordering {
     @Id
     @GeneratedValue(strategy = AUTO)
     private Long id;
+
     private String userEmail;
+
     @ManyToMany(fetch = FetchType.EAGER)
     private Set<SaleProduct> cart = new HashSet<>();
+
     private Float total;
+
     private boolean active;
 }

@@ -88,41 +88,43 @@ public class AuthController {
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
-    private Role findRole (ERole enumRole){
+
+    private Role findRole(ERole enumRole) {
         return roleRepo.findByName(enumRole)
                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
     }
-    private Set<Role> buildRoles (Set<String> strRoles){
+
+    private Set<Role> buildRoles(Set<String> strRoles) {
         Set<Role> roles = new HashSet<>();
 
-//        if (strRoles == null) {
-//            Role userRole = findRole(ERole.ROLE_USER);
-//            roles.add(userRole);
-//        } else {
+        if (strRoles == null) {
+            Role userRole = findRole(ERole.ROLE_USER);
+            roles.add(userRole);
+        } else {
             strRoles.forEach(role -> {
                 switch (role) {
-                    case "admin" -> {
+                    case "admin":
                         Role adminRole = findRole(ERole.ROLE_ADMIN);
                         roles.add(adminRole);
-                    }
-                    case "mod" -> {
+                        break;
+                    case "mod":
                         Role modRole = findRole(ERole.ROLE_MODERATOR);
                         roles.add(modRole);
-                    }
+                        break;
                 }
             });
             Role userRole = findRole(ERole.ROLE_USER);
             roles.add(userRole);
-//        }
+        }
         return roles;
     }
 
     public ResponseEntity<?> updateUser(@Valid SignupRequest signUpRequest, Long id) {
         Optional<AppUser> user = userRepo.findById(id);
-        if (user.isEmpty()) {
+        if (!user.isPresent()) {
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("User with id "+id+" is not presented in database"));
+                    .body(new MessageResponse("User with id " + id + " is not presented in database"));
         }
         AppUser userDB = user.get();
         Set<String> strRoles = signUpRequest.getRoles();

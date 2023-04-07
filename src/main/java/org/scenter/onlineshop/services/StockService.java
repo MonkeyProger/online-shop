@@ -36,21 +36,24 @@ public class StockService {
     }
 
     // ====================== Product management =========================
+
     public List<Product> getAllProducts(){
         return productRepo.findAll();
     }
+
     public Product getProductById(Long productId) {
         Optional<Product> product = productRepo.findById(productId);
-        if (product.isEmpty()){
+        if (!product.isPresent()){
             log.error("Product with id " + productId + "not found");
             throw new NoSuchElementException("Product with id " + productId + "not found");
         }
         log.info("Product '{}' found in the database", product.get().getName());
         return product.get();
     }
+
     public Product getProductByName(String productName) {
         Optional<Product> product = productRepo.findByName(productName);
-        if (product.isEmpty()){
+        if (!product.isPresent()){
             log.error("Product with name " + productName + "not found");
             throw new NoSuchElementException("Product with name " + productName + "not found");
         }
@@ -64,6 +67,7 @@ public class StockService {
         saveProduct(product);
         return ResponseEntity.ok(new MessageResponse("Product added successfully"));
     }
+
     public ResponseEntity<?> updateProduct(Long productId, PlaceProductRequest placeProductRequest){
         Product product = getProductById(productId);
         Boolean saveComments = placeProductRequest.getSaveComments();
@@ -81,6 +85,7 @@ public class StockService {
         return ResponseEntity.ok(new MessageResponse("Product updated successfully"));
     }
     // ====================== Comment management =========================
+
     public ResponseEntity<?> postComment(CommentRequest commentRequest,
                                          String productName,
                                          MultipartFile[] files){
@@ -150,7 +155,7 @@ public class StockService {
 
     public ResponseEntity<?>  deleteComment(Long commentId, String productName){
         Optional<Comment> comment = commentRepo.findById(commentId);
-        if (comment.isEmpty()) {
+        if (!comment.isPresent()) {
             log.error("Comment with id "+commentId+" is not presented");
             return ResponseEntity
                     .badRequest()
@@ -174,6 +179,7 @@ public class StockService {
         return ResponseEntity.ok(new MessageResponse("Comment "+repoComment.getId().toString()+
                 " deleted successfully"));
     }
+
     public ResponseEntity<?> deleteProductComments(String productName){
         Product product = getProductByName(productName);
         List<Comment> comments = product.getComments();
@@ -197,18 +203,20 @@ public class StockService {
     public List<Category> getAllCategories(){
         return categoryRepo.findAll();
     }
+
     public Category getCategoryById(Long categoryId) {
         Optional<Category> category = categoryRepo.findById(categoryId);
-        if (category.isEmpty()){
+        if (!category.isPresent()){
             log.error("Category with id " + categoryId + "not found");
             throw new NoSuchElementException("Category with id " + categoryId + "not found");
         }
         log.info("Category '{}' found in the database", category.get().getName());
         return category.get();
     }
+
     public Category getCategoryByName(String categoryName) {
         Optional<Category> category = categoryRepo.findByName(categoryName);
-        if (category.isEmpty()) {
+        if (!category.isPresent()) {
             log.error("Category with name " + categoryName + "not found");
             throw new NoSuchElementException("Category with name " + categoryName + "not found");
         }
@@ -228,6 +236,7 @@ public class StockService {
         category.setProducts(oldProducts);
         saveCategory(category);
     }
+
     public Category saveProductToCategory(Long productId, Long categoryId){
         Category category = getCategoryById(categoryId);
         Product product = getProductById(productId);
@@ -240,18 +249,21 @@ public class StockService {
         category.setProducts(oldProducts);
         return saveCategory(category);
     }
+
     public void saveParentToCategory(String child, String parent){
         Category parentCategory = getCategoryByName(parent);
         Category childCategory = getCategoryByName(child);
         childCategory.setParentId(parentCategory.getId());
         saveCategory(childCategory);
     }
+
     public Category saveParentToCategory(Long child, Long parent){
         Category parentCategory = getCategoryById(parent);
         Category childCategory = getCategoryById(child);
         childCategory.setParentId(parentCategory.getId());
         return saveCategory(childCategory);
     }
+
     public List<Product> getProductsByCategory(String categoryName){
         Category category = getCategoryByName(categoryName);
         return category.getProducts();
@@ -284,6 +296,7 @@ public class StockService {
         saveCategory(category);
         return ResponseEntity.ok(new MessageResponse("Category: "+category.getName()+" created successfully"));
     }
+
     public ResponseEntity<?> deleteCategory(Long categoryId){
         Category category = getCategoryById(categoryId);
         Long parentId = category.getParentId();
@@ -297,18 +310,37 @@ public class StockService {
     }
 
     @Transactional
-    public void saveComment(Comment comment) {commentRepo.save(comment);}
-    @Transactional
-    public void deleteComment(Comment comment) {commentRepo.delete(comment);}
-    @Transactional
-    public void deleteComments(List<Comment> comments) {commentRepo.deleteAll(comments);}
-    @Transactional
-    public void saveProduct(Product product) {productRepo.save(product);}
-    @Transactional
-    public void saveAllProducts(Set<Product> products) {productRepo.saveAll(products);}
+    public void saveComment(Comment comment) {
+        commentRepo.save(comment);
+    }
 
     @Transactional
-    public void deleteCategory(Category category) {categoryRepo.delete(category);}
+    public void deleteComment(Comment comment) {
+        commentRepo.delete(comment);
+    }
+
     @Transactional
-    public Category saveCategory(Category category) {return categoryRepo.save(category);}
+    public void deleteComments(List<Comment> comments) {
+        commentRepo.deleteAll(comments);
+    }
+
+    @Transactional
+    public void saveProduct(Product product) {
+        productRepo.save(product);
+    }
+
+    @Transactional
+    public void saveAllProducts(Set<Product> products) {
+        productRepo.saveAll(products);
+    }
+
+    @Transactional
+    public void deleteCategory(Category category) {
+        categoryRepo.delete(category);
+    }
+
+    @Transactional
+    public Category saveCategory(Category category) {
+        return categoryRepo.save(category);
+    }
 }
