@@ -3,12 +3,12 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/online-shop
-    username: postgres
-    password: alexey
+    url: jdbc:postgresql://localhost:5332/postgres
+    username: makar
+    password: password
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
