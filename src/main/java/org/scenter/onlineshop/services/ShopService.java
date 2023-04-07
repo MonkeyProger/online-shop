@@ -102,7 +102,6 @@ public class ShopService {
                     .body(new MessageResponse("Error: Email is not presented!"));
         }
         Set<SaleProduct> cart = placeOrderRequest.getOrder();
-        //float cartCost = getCartCost(cart);
         float cartCost = placeOrderRequest.getTotal();
         Set<Product> rejectedProducts = isCartInStock(cart);
         if (!rejectedProducts.isEmpty()) {
