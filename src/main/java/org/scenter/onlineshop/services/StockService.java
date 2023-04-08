@@ -84,8 +84,25 @@ public class StockService {
         saveProduct(product);
         return ResponseEntity.ok(new MessageResponse("Product updated successfully"));
     }
-    // ====================== Comment management =========================
 
+    public ResponseEntity<?> removeProduct(Long productId){
+        Product product = getProductById(productId);
+        if (product == null) {
+            return ResponseEntity.ok(new MessageResponse("Product with id "+productId+ " is not found"));
+        }
+        List<Comment> productComments = product.getComments();
+        Set<Category> categories = getCategoriesByProduct(product);
+        for (Category category : categories) {
+            List<Product> productList = category.getProducts();
+            productList.remove(product);
+            category.setProducts(productList);
+            saveCategory(category);
+        }
+        removeProduct(product);
+        deleteComments(productComments);
+        return ResponseEntity.ok(new MessageResponse("Product: "+product.getName()+" deleted successfully"));
+    }
+    // ====================== Comment management =========================
     public ResponseEntity<?> postComment(CommentRequest commentRequest,
                                          String productName,
                                          MultipartFile[] files){
@@ -107,31 +124,34 @@ public class StockService {
                     .body(new MessageResponse("Comment has already been added to product: "+productName));
         }
 
-        // Сохранение файлов в бд
-        if (!fileStorageService.checkImages(files)){
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Wrong format of images."));
-        }
+        log.info(Arrays.toString(files));
 
-        if (files.length > 0 && files.length <= 10)
-        {
-            List<FileDB> filesDB;
-            try {
-                filesDB = fileStorageService.saveFilesDB(files);
-            } catch (Exception e) {
+        // Сохранение файлов в бд
+        if (files[0].getContentType()!=null) {
+            if (files.length <= 10) {
+
+                if (!fileStorageService.checkImages(files)) {
+                    return ResponseEntity
+                            .badRequest()
+                            .body(new MessageResponse("Error: Wrong format of images."));
+                }
+                List<FileDB> filesDB;
+                try {
+                    filesDB = fileStorageService.saveFilesDB(files);
+                } catch (Exception e) {
+                    return ResponseEntity
+                            .badRequest()
+                            .body(new MessageResponse("Error: Fail to upload files :" + e.getMessage()));
+                }
+                // Задание списка пользовательских фотографий комментарию
+                List<ResponseFile> commentFiles = new ArrayList<>();
+                filesDB.forEach(file -> commentFiles.add(fileStorageService.saveResponsefile(file)));
+                comment.setImages(commentFiles);
+            } else {
                 return ResponseEntity
                         .badRequest()
-                        .body(new MessageResponse("Error: Fail to upload files :" + e.getMessage()));
+                        .body(new MessageResponse("Error: Too many files to upload."));
             }
-            // Задание списка пользовательских фотографий комментарию
-            List<ResponseFile> commentFiles = new ArrayList<>();
-            filesDB.forEach(file -> commentFiles.add(fileStorageService.saveResponsefile(file)));
-            comment.setImages(commentFiles);
-        } else {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Too many files to upload."));
         }
 
         comments.add(comment);
@@ -153,16 +173,22 @@ public class StockService {
                 .body(fileDB.getData());
     }
 
-    public ResponseEntity<?>  deleteComment(Long commentId, String productName){
+    public Comment getCommentById(Long commentId){
         Optional<Comment> comment = commentRepo.findById(commentId);
         if (!comment.isPresent()) {
             log.error("Comment with id "+commentId+" is not presented");
+            return null;
+        }
+        return comment.get();
+    }
+
+    public ResponseEntity<?> deleteComment(Long commentId, String productName){
+        Comment repoComment = getCommentById(commentId);
+        if (repoComment == null){
             return ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Comment with id "+commentId+" is not presented"));
         }
-
-        Comment repoComment = comment.get();
         Product product = getProductByName(productName);
         List<Comment> comments = product.getComments();
         if (!comments.contains(repoComment)){
@@ -174,8 +200,11 @@ public class StockService {
 
         comments.remove(repoComment);
         product.setComments(comments);
-        deleteComment(repoComment);
         saveProduct(product);
+
+        List<ResponseFile> commentFiles = repoComment.getImages();
+        deleteComment(repoComment);
+        if (!commentFiles.isEmpty()) {fileStorageService.deleteDBFiles(commentFiles);}
         return ResponseEntity.ok(new MessageResponse("Comment "+repoComment.getId().toString()+
                 " deleted successfully"));
     }
@@ -187,6 +216,16 @@ public class StockService {
         deleteComments(comments);
         saveProduct(product);
         return ResponseEntity.ok(new MessageResponse("Comments of the product "+productName+
+                " cleared successfully"));
+    }
+
+    public ResponseEntity<?> deleteCommentPhotos(Long commentId){
+        Comment comment = getCommentById(commentId);
+        List<ResponseFile> commentPhotos = comment.getImages();
+        comment.setImages(new ArrayList<>());
+        fileStorageService.deleteResponseFiles(commentPhotos);
+        saveComment(comment);
+        return ResponseEntity.ok(new MessageResponse("Photos of the comment "+commentId+
                 " cleared successfully"));
     }
 
@@ -269,6 +308,10 @@ public class StockService {
         return category.getProducts();
     }
 
+    public Set<Category> getCategoriesByProduct(Product product){
+        return categoryRepo.findAllByProductsContains(product);
+    }
+
     public ResponseEntity<?> placeCategory(CategoryRequest categoryRequest){
         Category category = new Category(null, categoryRequest.getName(),categoryRequest.getTitle(),
                 categoryRequest.getParentId(),null);
@@ -338,7 +381,10 @@ public class StockService {
     public void deleteCategory(Category category) {
         categoryRepo.delete(category);
     }
-
+    @Transactional
+    public void removeProduct(Product product) {
+        productRepo.delete(product);
+    }
     @Transactional
     public Category saveCategory(Category category) {
         return categoryRepo.save(category);

@@ -5,13 +5,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Range;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.ManyToMany;
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static javax.persistence.FetchType.EAGER;
 import static javax.persistence.GenerationType.AUTO;
 
 @Entity
@@ -31,7 +29,7 @@ public class Comment {
 
     private String userEmail;
 
-    @ManyToMany
+    @OneToMany(fetch = EAGER)
     private List<ResponseFile> images = new ArrayList<>();
 
     public Comment (String text, Integer rating, String userEmail) {

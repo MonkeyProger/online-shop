@@ -1,6 +1,7 @@
 package org.scenter.onlineshop.domain;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -9,10 +10,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Lob;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
 @NoArgsConstructor
-public class FileDB {
+public class FileDB extends AbstractFile {
 
     @Id
     @GeneratedValue(generator = "uuid")

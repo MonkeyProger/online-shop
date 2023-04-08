@@ -63,6 +63,12 @@ public class AdminController {
         return stockService.deleteProductComments(product);
     }
 
+    @DeleteMapping("/deleteCommentPhotos/{commentId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> deleteCommentPhotos(@PathVariable Long commentId) {
+        return stockService.deleteCommentPhotos(commentId);
+    }
+
     @GetMapping ("/getUserComments/{userEmail}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getCommentsByUserEmail(@PathVariable String userEmail) {
@@ -82,6 +88,12 @@ public class AdminController {
     public ResponseEntity<?> updateProduct(@PathVariable Long productId,
                                            @Valid @RequestBody PlaceProductRequest placeProductRequest) {
         return stockService.updateProduct(productId,placeProductRequest);
+    }
+
+    @DeleteMapping ("/deleteProduct/{productId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> deleteProduct(@PathVariable Long productId) {
+        return stockService.removeProduct(productId);
     }
 
     //  ===================================        Categories management         =======================================

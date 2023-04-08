@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -27,7 +28,7 @@ public class FileStorageService {
     private ResponseFileRepo responseFileRepo;
     final String[] imageTypes = {"image/gif", "image/jpeg", "image/png"};
 
-    public boolean checkImages(MultipartFile[] files){
+    protected boolean checkImages(MultipartFile[] files){
         for (MultipartFile file : files) {
             if (Arrays.stream(imageTypes).noneMatch(file.getContentType()::contains)) {
                 return false;
@@ -37,14 +38,14 @@ public class FileStorageService {
     }
 
     @Transactional
-    public FileDB store(MultipartFile file) throws IOException {
+    protected FileDB store(MultipartFile file) throws IOException {
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         FileDB FileDB = new FileDB(fileName, file.getContentType(), file.getBytes());
 
         return fileRepo.save(FileDB);
     }
 
-    public List<FileDB> saveFilesDB(MultipartFile[] files) throws RuntimeException{
+    protected List<FileDB> saveFilesDB(MultipartFile[] files) throws RuntimeException{
         List<FileDB> filesDB = new ArrayList<>();
         Arrays.stream(files).forEach(file -> {
             try {
@@ -56,17 +57,37 @@ public class FileStorageService {
         return filesDB;
     }
 
-    public FileDB getFile(String id) {
+    protected FileDB getFile(String id) {
         Optional<FileDB> fileDB = fileRepo.findById(id);
         return fileDB.orElse(null);
     }
 
-    public Stream<FileDB> getAllFiles() {
+    protected Stream<FileDB> getAllFiles() {
         return fileRepo.findAll().stream();
+    }
+    protected void deleteResponseFiles(List<ResponseFile> responseFiles){
+        deleteFiles(responseFiles.stream().map(ResponseFile::getFileDBid).collect(Collectors.toList()));
+        //responseFiles.forEach(file -> deleteFile(file.getFileDBid()));
+        responseFileRepo.deleteAll(responseFiles);
+    }
+    protected void deleteDBFiles(List<ResponseFile> responseFiles){
+        if (responseFiles.isEmpty()) return;
+        deleteFiles(responseFiles.stream().map(ResponseFile::getFileDBid).collect(Collectors.toList()));
+        responseFileRepo.deleteAll(responseFiles);
     }
 
     @Transactional
-    public ResponseFile saveResponsefile(FileDB file){
+    protected void deleteFile(String fileId){
+        fileRepo.deleteById(fileId);
+    }
+    @Transactional
+    protected void deleteFiles(List<String> fileId){
+        fileRepo.deleteAllById(fileId);
+    }
+
+
+    @Transactional
+    protected ResponseFile saveResponsefile(FileDB file){
         String fileDownloadUri = ServletUriComponentsBuilder
                 .fromCurrentContextPath()
                 .path("/api/stock/files/")
