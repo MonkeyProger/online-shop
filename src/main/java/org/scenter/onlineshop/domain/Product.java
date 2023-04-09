@@ -3,15 +3,13 @@ package org.scenter.onlineshop.domain;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static javax.persistence.FetchType.EAGER;
 import static javax.persistence.GenerationType.AUTO;
 
 @Entity
@@ -28,7 +26,8 @@ public class Product {
 
     private String title;
 
-    @OneToMany(fetch = EAGER)
+    @OneToMany
+    @LazyCollection(LazyCollectionOption.FALSE)
     private List<Comment> comments = new ArrayList<>();
 
     private Float price;
@@ -36,4 +35,8 @@ public class Product {
     private Float salePrice;
 
     private Integer amount;
+    @ManyToMany
+    @LazyCollection(LazyCollectionOption.FALSE)
+    private List<ProductFile> images = new ArrayList<>();
+
 }

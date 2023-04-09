@@ -4,6 +4,7 @@ package org.scenter.onlineshop;
 import org.scenter.onlineshop.domain.AppUser;
 import org.scenter.onlineshop.domain.Category;
 import org.scenter.onlineshop.domain.Product;
+import org.scenter.onlineshop.services.FileStorageService;
 import org.scenter.onlineshop.services.StockService;
 import org.scenter.onlineshop.services.UserDetailsServiceImpl;
 import org.springframework.boot.CommandLineRunner;
@@ -15,7 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.ArrayList;
 
-import static org.scenter.onlineshop.domain.ERole.*;
+import static org.scenter.onlineshop.domain.ERole.ROLE_ADMIN;
 
 @SpringBootApplication
 public class OnlineShopApplication {
@@ -24,21 +25,22 @@ public class OnlineShopApplication {
 	}
 
 	@Bean
-	CommandLineRunner run(UserDetailsServiceImpl userDetailsService, StockService stockService) {
+	CommandLineRunner run(UserDetailsServiceImpl userDetailsService,
+						  FileStorageService fileStorageService,
+						  StockService stockService) {
 		PasswordEncoder encoder = new BCryptPasswordEncoder();
 		return args -> {
-
 
 			AppUser admin = new AppUser("admin","admin","admin@admin.admin",encoder.encode("admin"), ROLE_ADMIN);
 			userDetailsService.saveUser(admin);
 
-			stockService.saveProduct(new Product(null, "Iphone14","Смартфон Apple IPhone 14",null, 50.50f,null, 100));
-			stockService.saveProduct(new Product(null, "Iphone13","Смартфон Apple IPhone 13",null, 25.25f,null, 4));
-			stockService.saveProduct(new Product(null,"SamsungGS8","Смартфон Samsung Galaxy S8",null,25f,null,200));
-			stockService.saveProduct(new Product(null,"HuaweiP50","Смартфон Huawei P50",null,23f,null,200));
-			stockService.saveProduct(new Product(null,"AppleAirPodsPro","Наушники Apple AirPods Pro",null,15f,null,200));
-			stockService.saveProduct(new Product(null,"CaseHuaweiP50","Наушники Apple AirPods Pro",null,15f,null,200));
-			stockService.saveProduct(new Product(null,"YandexStation","Умная колонка Яндекс Станция",null,20f,null,200));
+			stockService.saveProduct(new Product(null, "Iphone14","Смартфон Apple IPhone 14",null, 50.50f,null, 100,null));
+			stockService.saveProduct(new Product(null, "Iphone13","Смартфон Apple IPhone 13",null, 25.25f,null, 4,null));
+			stockService.saveProduct(new Product(null,"SamsungGS8","Смартфон Samsung Galaxy S8",null,25f,null,200,null));
+			stockService.saveProduct(new Product(null,"HuaweiP50","Смартфон Huawei P50",null,23f,null,200,null));
+			stockService.saveProduct(new Product(null,"AppleAirPodsPro","Наушники Apple AirPods Pro",null,15f,null,200,null));
+			stockService.saveProduct(new Product(null,"CaseHuaweiP50","Наушники Apple AirPods Pro",null,15f,null,200,null));
+			stockService.saveProduct(new Product(null,"YandexStation","Умная колонка Яндекс Станция",null,20f,null,200,null));
 
 			stockService.saveCategory(new Category(null,"Smartphones","Смартфоны",null,new ArrayList<>()));
 			stockService.saveCategory(new Category(null,"Apple","Apple", null,new ArrayList<>()));

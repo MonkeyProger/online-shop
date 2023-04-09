@@ -61,13 +61,44 @@ public class StockService {
         return product.get();
     }
 
-    public ResponseEntity<?> placeProduct (PlaceProductRequest placeProductRequest){
+    public ResponseEntity<?> placeProduct (PlaceProductRequest placeProductRequest,
+                                           MultipartFile[] files){
         Product product = new Product(null, placeProductRequest.getName(), placeProductRequest.getTitle(),null,
-                placeProductRequest.getPrice(),placeProductRequest.getSalePrice(), placeProductRequest.getAmount());
-        saveProduct(product);
+                placeProductRequest.getPrice(),placeProductRequest.getSalePrice(), placeProductRequest.getAmount(),null);
+        product = saveProduct(product);
+        addPhotosToProduct(product.getId(),files);
         return ResponseEntity.ok(new MessageResponse("Product added successfully"));
     }
 
+    public ResponseEntity<?> addPhotosToProduct(Long productId, MultipartFile[] files){
+        Product product = getProductById(productId);
+        if (files[0].getContentType()!=null) {
+            if (files.length <= 10) {
+                if (!fileStorageService.checkImages(files)) {
+                    return ResponseEntity
+                            .badRequest()
+                            .body(new MessageResponse("Error: Wrong format of images."));
+                }
+                List<FileDB> filesDB;
+                try {
+                    filesDB = fileStorageService.saveFilesDB(files);
+                } catch (Exception e) {
+                    return ResponseEntity
+                            .badRequest()
+                            .body(new MessageResponse("Error: Fail to upload files :" + e.getMessage()));
+                }
+                List<ProductFile> productFiles = new ArrayList<>();
+                filesDB.forEach(file -> productFiles.add(fileStorageService.saveProductFile(file)));
+                product.setImages(productFiles);
+            } else {
+                return ResponseEntity
+                        .badRequest()
+                        .body(new MessageResponse("Error: Too many files to upload."));
+            }
+            saveProduct(product);
+        }
+        return ResponseEntity.ok(new MessageResponse("Photos added successfully"));
+    }
     public ResponseEntity<?> updateProduct(Long productId, PlaceProductRequest placeProductRequest){
         Product product = getProductById(productId);
         Boolean saveComments = placeProductRequest.getSaveComments();
@@ -204,7 +235,7 @@ public class StockService {
 
         List<ResponseFile> commentFiles = repoComment.getImages();
         deleteComment(repoComment);
-        if (!commentFiles.isEmpty()) {fileStorageService.deleteDBFiles(commentFiles);}
+        if (!commentFiles.isEmpty()) {fileStorageService.deleteResponseFiles(commentFiles);}
         return ResponseEntity.ok(new MessageResponse("Comment "+repoComment.getId().toString()+
                 " deleted successfully"));
     }
@@ -368,8 +399,8 @@ public class StockService {
     }
 
     @Transactional
-    public void saveProduct(Product product) {
-        productRepo.save(product);
+    public Product saveProduct(Product product) {
+        return productRepo.save(product);
     }
 
     @Transactional

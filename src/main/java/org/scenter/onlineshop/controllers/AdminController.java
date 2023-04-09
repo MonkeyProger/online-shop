@@ -8,6 +8,7 @@ import org.scenter.onlineshop.services.UserDetailsServiceImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 
@@ -79,9 +80,11 @@ public class AdminController {
 
     @PostMapping ("/placeProduct")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> placeProduct(@Valid @RequestBody PlaceProductRequest placeProductRequest) {
-        return stockService.placeProduct(placeProductRequest);
+    public ResponseEntity<?> placeProduct(@Valid @RequestPart PlaceProductRequest placeProductRequest,
+                                          @RequestPart MultipartFile[] files) {
+        return stockService.placeProduct(placeProductRequest,files);
     }
+
 
     @PostMapping ("/updateProduct/{productId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")

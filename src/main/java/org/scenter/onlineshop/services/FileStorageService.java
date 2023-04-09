@@ -3,8 +3,10 @@ package org.scenter.onlineshop.services;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scenter.onlineshop.domain.FileDB;
+import org.scenter.onlineshop.domain.ProductFile;
 import org.scenter.onlineshop.domain.ResponseFile;
 import org.scenter.onlineshop.repo.FileRepo;
+import org.scenter.onlineshop.repo.ProductFileRepo;
 import org.scenter.onlineshop.repo.ResponseFileRepo;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -26,6 +28,7 @@ import java.util.stream.Stream;
 public class FileStorageService {
     private FileRepo fileRepo;
     private ResponseFileRepo responseFileRepo;
+    private ProductFileRepo productFileRepo;
     final String[] imageTypes = {"image/gif", "image/jpeg", "image/png"};
 
     protected boolean checkImages(MultipartFile[] files){
@@ -45,7 +48,7 @@ public class FileStorageService {
         return fileRepo.save(FileDB);
     }
 
-    protected List<FileDB> saveFilesDB(MultipartFile[] files) throws RuntimeException{
+    public List<FileDB> saveFilesDB(MultipartFile[] files) throws RuntimeException{
         List<FileDB> filesDB = new ArrayList<>();
         Arrays.stream(files).forEach(file -> {
             try {
@@ -66,14 +69,15 @@ public class FileStorageService {
         return fileRepo.findAll().stream();
     }
     protected void deleteResponseFiles(List<ResponseFile> responseFiles){
-        deleteFiles(responseFiles.stream().map(ResponseFile::getFileDBid).collect(Collectors.toList()));
-        //responseFiles.forEach(file -> deleteFile(file.getFileDBid()));
-        responseFileRepo.deleteAll(responseFiles);
-    }
-    protected void deleteDBFiles(List<ResponseFile> responseFiles){
         if (responseFiles.isEmpty()) return;
         deleteFiles(responseFiles.stream().map(ResponseFile::getFileDBid).collect(Collectors.toList()));
         responseFileRepo.deleteAll(responseFiles);
+    }
+    protected void deleteProductFiles(List<ProductFile> productFiles){
+        if (productFiles.isEmpty()) return;
+        deleteFiles(productFiles.stream().map(ProductFile::getFileDBid).collect(Collectors.toList()));
+        //responseFiles.forEach(file -> deleteFile(file.getFileDBid()));
+        productFileRepo.deleteAll(productFiles);
     }
 
     @Transactional
@@ -95,6 +99,22 @@ public class FileStorageService {
                 .toUriString();
 
         return responseFileRepo.save(new ResponseFile(
+                file.getId(),
+                file.getName(),
+                fileDownloadUri,
+                file.getType(),
+                file.getData().length));
+    }
+
+    @Transactional
+    public ProductFile saveProductFile(FileDB file){
+        String fileDownloadUri = ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .path("/api/stock/files/")
+                .path(file.getId())
+                .toUriString();
+
+        return productFileRepo.save(new ProductFile(
                 file.getId(),
                 file.getName(),
                 fileDownloadUri,
