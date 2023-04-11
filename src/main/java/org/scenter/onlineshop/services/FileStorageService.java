@@ -41,7 +41,7 @@ public class FileStorageService {
     }
 
     @Transactional
-    protected FileDB store(MultipartFile file) throws IOException {
+    public FileDB store(MultipartFile file) throws IOException {
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         FileDB FileDB = new FileDB(fileName, file.getContentType(), file.getBytes());
 
@@ -68,11 +68,13 @@ public class FileStorageService {
     protected Stream<FileDB> getAllFiles() {
         return fileRepo.findAll().stream();
     }
+
     protected void deleteResponseFiles(List<ResponseFile> responseFiles){
         if (responseFiles.isEmpty()) return;
         deleteFiles(responseFiles.stream().map(ResponseFile::getFileDBid).collect(Collectors.toList()));
         responseFileRepo.deleteAll(responseFiles);
     }
+
     protected void deleteProductFiles(List<ProductFile> productFiles){
         if (productFiles.isEmpty()) return;
         deleteFiles(productFiles.stream().map(ProductFile::getFileDBid).collect(Collectors.toList()));
@@ -81,17 +83,18 @@ public class FileStorageService {
     }
 
     @Transactional
-    protected void deleteFile(String fileId){
+    public void deleteFile(String fileId){
         fileRepo.deleteById(fileId);
     }
+
     @Transactional
-    protected void deleteFiles(List<String> fileId){
+    public void deleteFiles(List<String> fileId){
         fileRepo.deleteAllById(fileId);
     }
 
 
     @Transactional
-    protected ResponseFile saveResponsefile(FileDB file){
+    public ResponseFile saveResponsefile(FileDB file){
         String fileDownloadUri = ServletUriComponentsBuilder
                 .fromCurrentContextPath()
                 .path("/api/stock/files/")

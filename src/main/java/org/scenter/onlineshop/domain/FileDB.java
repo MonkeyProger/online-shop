@@ -10,11 +10,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Lob;
 
-@EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
 @NoArgsConstructor
-public class FileDB extends AbstractFile {
+public class FileDB {
 
     @Id
     @GeneratedValue(generator = "uuid")
