@@ -35,6 +35,7 @@ public class Product {
     private Float salePrice;
 
     private Integer amount;
+
     @ManyToMany
     @LazyCollection(LazyCollectionOption.FALSE)
     private List<ProductFile> images = new ArrayList<>();

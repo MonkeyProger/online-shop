@@ -9,11 +9,11 @@ import javax.validation.constraints.Size;
 @Data
 public class SignupRequest {
     @NotBlank
-    @Size(min = 3, max = 20)
+    @Size(min = 1, max = 20)
     private String name;
 
     @NotBlank
-    @Size(min = 3, max = 20)
+    @Size(min = 1, max = 20)
     private String surname;
 
     @NotBlank

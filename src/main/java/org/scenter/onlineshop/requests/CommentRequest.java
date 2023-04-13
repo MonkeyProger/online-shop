@@ -15,7 +15,4 @@ public class CommentRequest {
 
     @Range(min = 1, max = 5)
     private Integer rating;
-
-    @NotBlank
-    private String userEmail;
 }

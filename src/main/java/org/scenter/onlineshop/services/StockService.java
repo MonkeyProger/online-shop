@@ -27,23 +27,17 @@ public class StockService {
     private CategoryRepo categoryRepo;
     private ProductRepo productRepo;
     private CommentRepo commentRepo;
-    private UserRepo userRepo;
-    private FileStorageService fileStorageService;
-
-    public boolean isAuthorized(String email){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return Objects.equals(email, username);
-    }
+    private FileStorageService fileStorageService
 
     // ====================== Product management =========================
 
-    public List<Product> getAllProducts(){
+    public List<Product> getAllProducts() {
         return productRepo.findAll();
     }
 
     public Product getProductById(Long productId) {
         Optional<Product> product = productRepo.findById(productId);
-        if (!product.isPresent()){
+        if (!product.isPresent()) {
             log.error("Product with id " + productId + "not found");
             throw new NoSuchElementException("Product with id " + productId + "not found");
         }
@@ -53,7 +47,7 @@ public class StockService {
 
     public Product getProductByName(String productName) {
         Optional<Product> product = productRepo.findByName(productName);
-        if (!product.isPresent()){
+        if (!product.isPresent()) {
             log.error("Product with name " + productName + "not found");
             throw new NoSuchElementException("Product with name " + productName + "not found");
         }
@@ -61,18 +55,26 @@ public class StockService {
         return product.get();
     }
 
-    public ResponseEntity<?> placeProduct (PlaceProductRequest placeProductRequest,
-                                           MultipartFile[] files){
-        Product product = new Product(null, placeProductRequest.getName(), placeProductRequest.getTitle(),null,
-                placeProductRequest.getPrice(),placeProductRequest.getSalePrice(), placeProductRequest.getAmount(),null);
+    public ResponseEntity<?> placeProduct(PlaceProductRequest placeProductRequest,
+                                          MultipartFile[] files) {
+        Product product = new Product(
+                null,
+                placeProductRequest.getName(),
+                placeProductRequest.getTitle(),
+                null,
+                placeProductRequest.getPrice(),
+                placeProductRequest.getSalePrice(),
+                placeProductRequest.getAmount(),
+                null);
+
         product = saveProduct(product);
-        addPhotosToProduct(product.getId(),files);
+        addPhotosToProduct(product.getId(), files);
         return ResponseEntity.ok(new MessageResponse("Product added successfully"));
     }
 
-    public ResponseEntity<?> addPhotosToProduct(Long productId, MultipartFile[] files){
+    public ResponseEntity<?> addPhotosToProduct(Long productId, MultipartFile[] files) {
         Product product = getProductById(productId);
-        if (files[0].getContentType()!=null) {
+        if (files[0].getContentType() != null) {
             if (files.length <= 10) {
                 if (!fileStorageService.checkImages(files)) {
                     return ResponseEntity
@@ -99,10 +101,11 @@ public class StockService {
         }
         return ResponseEntity.ok(new MessageResponse("Photos added successfully"));
     }
-    public ResponseEntity<?> updateProduct(Long productId, PlaceProductRequest placeProductRequest){
+
+    public ResponseEntity<?> updateProduct(Long productId, PlaceProductRequest placeProductRequest) {
         Product product = getProductById(productId);
         Boolean saveComments = placeProductRequest.getSaveComments();
-        if (saveComments == null || !saveComments ) {
+        if (saveComments == null || !saveComments) {
             List<Comment> comments = product.getComments();
             product.setComments(new ArrayList<>());
             deleteComments(comments);
@@ -116,10 +119,10 @@ public class StockService {
         return ResponseEntity.ok(new MessageResponse("Product updated successfully"));
     }
 
-    public ResponseEntity<?> removeProduct(Long productId){
+    public ResponseEntity<?> removeProduct(Long productId) {
         Product product = getProductById(productId);
         if (product == null) {
-            return ResponseEntity.ok(new MessageResponse("Product with id "+productId+ " is not found"));
+            return ResponseEntity.ok(new MessageResponse("Product with id " + productId + " is not found"));
         }
         List<Comment> productComments = product.getComments();
         Set<Category> categories = getCategoriesByProduct(product);
@@ -131,34 +134,40 @@ public class StockService {
         }
         removeProduct(product);
         deleteComments(productComments);
-        return ResponseEntity.ok(new MessageResponse("Product: "+product.getName()+" deleted successfully"));
+        return ResponseEntity.ok(new MessageResponse("Product: " + product.getName() + " deleted successfully"));
     }
+
     // ====================== Comment management =========================
     public ResponseEntity<?> postComment(CommentRequest commentRequest,
                                          String productName,
-                                         MultipartFile[] files){
-        if (!userRepo.existsByEmail(commentRequest.getUserEmail())){
-            log.error("User with id " + commentRequest.getUserEmail() + "not found");
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("User with email " + commentRequest.getUserEmail() + "not found"));
-        }
+                                         MultipartFile[] files) {
 
-        Comment comment = new Comment(commentRequest.getComment(),
-                commentRequest.getRating(),commentRequest.getUserEmail());
+//        if (!userRepo.existsByEmail(commentRequest.getUserEmail())){
+//            log.error("User with id " + commentRequest.getUserEmail() + "not found");
+//            return ResponseEntity
+//                    .badRequest()
+//                    .body(new MessageResponse("User with email " + commentRequest.getUserEmail() + "not found"));
+//        }
+
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        Comment comment = new Comment(
+                commentRequest.getComment(),
+                commentRequest.getRating(),
+                userEmail);
+
         Product product = getProductByName(productName);
         List<Comment> comments = product.getComments();
-        if (comments.contains(comment)){
-            log.error("Comment has already been added to product: "+productName);
+        if (comments.contains(comment)) {
+            log.error("Comment has already been added to product: " + productName);
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Comment has already been added to product: "+productName));
+                    .body(new MessageResponse("Comment has already been added to product: " + productName));
         }
 
         log.info(Arrays.toString(files));
 
         // Сохранение файлов в бд
-        if (files[0].getContentType()!=null) {
+        if (files[0].getContentType() != null) {
             if (files.length <= 10) {
 
                 if (!fileStorageService.checkImages(files)) {
@@ -189,44 +198,59 @@ public class StockService {
         product.setComments(comments);
         saveComment(comment);
         saveProduct(product);
-        return ResponseEntity.ok(new MessageResponse("Comment "+comment.getId().toString()+
-                " added to product "+productName+" successfully"));
+        return ResponseEntity.ok(new MessageResponse("Comment " + comment.getId().toString() +
+                " added to product " + productName + " successfully"));
     }
 
-    public ResponseEntity<?> getFile(String id){
+    public ResponseEntity<?> getFile(String id) {
         FileDB fileDB = fileStorageService.getFile(id);
         if (fileDB == null) return ResponseEntity
                 .badRequest()
-                .body(new MessageResponse("File with id "+id+" is not presented"));
+                .body(new MessageResponse("File with id " + id + " is not presented"));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                "attachment; filename=\"" + fileDB.getName() + "\"")
+                        "attachment; filename=\"" + fileDB.getName() + "\"")
                 .body(fileDB.getData());
     }
 
-    public Comment getCommentById(Long commentId){
+    public Comment getCommentById(Long commentId) {
         Optional<Comment> comment = commentRepo.findById(commentId);
         if (!comment.isPresent()) {
-            log.error("Comment with id "+commentId+" is not presented");
+            log.error("Comment with id " + commentId + " is not presented");
             return null;
         }
         return comment.get();
     }
 
-    public ResponseEntity<?> deleteComment(Long commentId, String productName){
+    public ResponseEntity<?> deleteComment(Long commentId, String productName) {
         Comment repoComment = getCommentById(commentId);
-        if (repoComment == null){
+        if (repoComment == null) {
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Comment with id "+commentId+" is not presented"));
+                    .body(new MessageResponse("Comment with id " + commentId + " is not presented"));
         }
+
+        if (!SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities()
+                .stream()
+                .anyMatch(a -> a.getAuthority().equals("ADMIN"))) {
+
+            String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+
+            if (!repoComment.getUserEmail().equals(userEmail)) {
+                return ResponseEntity
+                        .badRequest()
+                        .body(new MessageResponse("Access denied: To delete the comment, you need to be under your account"));
+            }
+        }
+
         Product product = getProductByName(productName);
         List<Comment> comments = product.getComments();
-        if (!comments.contains(repoComment)){
-            log.error("Comment is not presented in product: "+productName);
+        if (!comments.contains(repoComment)) {
+            log.error("Comment is not presented in product: " + productName);
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Comment is not presented in product: "+productName));
+                    .body(new MessageResponse("Comment is not presented in product: " + productName));
         }
 
         comments.remove(repoComment);
@@ -235,48 +259,50 @@ public class StockService {
 
         List<ResponseFile> commentFiles = repoComment.getImages();
         deleteComment(repoComment);
-        if (!commentFiles.isEmpty()) {fileStorageService.deleteResponseFiles(commentFiles);}
-        return ResponseEntity.ok(new MessageResponse("Comment "+repoComment.getId().toString()+
+        if (!commentFiles.isEmpty()) {
+            fileStorageService.deleteResponseFiles(commentFiles);
+        }
+        return ResponseEntity.ok(new MessageResponse("Comment " + repoComment.getId().toString() +
                 " deleted successfully"));
     }
 
-    public ResponseEntity<?> deleteProductComments(String productName){
+    public ResponseEntity<?> deleteProductComments(String productName) {
         Product product = getProductByName(productName);
         List<Comment> comments = product.getComments();
         product.setComments(new ArrayList<>());
         deleteComments(comments);
         saveProduct(product);
-        return ResponseEntity.ok(new MessageResponse("Comments of the product "+productName+
+        return ResponseEntity.ok(new MessageResponse("Comments of the product " + productName +
                 " cleared successfully"));
     }
 
-    public ResponseEntity<?> deleteCommentPhotos(Long commentId){
+    public ResponseEntity<?> deleteCommentPhotos(Long commentId) {
         Comment comment = getCommentById(commentId);
         List<ResponseFile> commentPhotos = comment.getImages();
         comment.setImages(new ArrayList<>());
         fileStorageService.deleteResponseFiles(commentPhotos);
         saveComment(comment);
-        return ResponseEntity.ok(new MessageResponse("Photos of the comment "+commentId+
+        return ResponseEntity.ok(new MessageResponse("Photos of the comment " + commentId +
                 " cleared successfully"));
     }
 
-    public List<Comment> getAllCommentsByUserEmail(String email){
+    public List<Comment> getAllCommentsByUserEmail(String email) {
         return commentRepo.findAllByUserEmail(email);
     }
 
-    public List<Comment> getAllCommentsByProduct(String productName){
+    public List<Comment> getAllCommentsByProduct(String productName) {
         Product product = getProductByName(productName);
         return product.getComments();
     }
 
     // ====================== Category management =========================
-    public List<Category> getAllCategories(){
+    public List<Category> getAllCategories() {
         return categoryRepo.findAll();
     }
 
     public Category getCategoryById(Long categoryId) {
         Optional<Category> category = categoryRepo.findById(categoryId);
-        if (!category.isPresent()){
+        if (!category.isPresent()) {
             log.error("Category with id " + categoryId + "not found");
             throw new NoSuchElementException("Category with id " + categoryId + "not found");
         }
@@ -294,12 +320,12 @@ public class StockService {
         return category.get();
     }
 
-    public void saveProductToCategory(String productName, String categoryName){
+    public void saveProductToCategory(String productName, String categoryName) {
         Category category = getCategoryByName(categoryName);
         Product product = getProductByName(productName);
         List<Product> oldProducts = category.getProducts();
         if (oldProducts.contains(product)) {
-            log.error("Product '{}' is already in category '{}'", productName,categoryName);
+            log.error("Product '{}' is already in category '{}'", productName, categoryName);
             throw new IllegalArgumentException("Product is already in category");
         }
         oldProducts.add(product);
@@ -307,12 +333,12 @@ public class StockService {
         saveCategory(category);
     }
 
-    public Category saveProductToCategory(Long productId, Long categoryId){
+    public Category saveProductToCategory(Long productId, Long categoryId) {
         Category category = getCategoryById(categoryId);
         Product product = getProductById(productId);
         List<Product> oldProducts = category.getProducts();
         if (oldProducts.contains(product)) {
-            log.error("Product '{}' is already in category '{}'", productId,categoryId);
+            log.error("Product '{}' is already in category '{}'", productId, categoryId);
             throw new IllegalArgumentException("Product is already in category");
         }
         oldProducts.add(product);
@@ -320,32 +346,32 @@ public class StockService {
         return saveCategory(category);
     }
 
-    public void saveParentToCategory(String child, String parent){
+    public void saveParentToCategory(String child, String parent) {
         Category parentCategory = getCategoryByName(parent);
         Category childCategory = getCategoryByName(child);
         childCategory.setParentId(parentCategory.getId());
         saveCategory(childCategory);
     }
 
-    public Category saveParentToCategory(Long child, Long parent){
+    public Category saveParentToCategory(Long child, Long parent) {
         Category parentCategory = getCategoryById(parent);
         Category childCategory = getCategoryById(child);
         childCategory.setParentId(parentCategory.getId());
         return saveCategory(childCategory);
     }
 
-    public List<Product> getProductsByCategory(String categoryName){
+    public List<Product> getProductsByCategory(String categoryName) {
         Category category = getCategoryByName(categoryName);
         return category.getProducts();
     }
 
-    public Set<Category> getCategoriesByProduct(Product product){
+    public Set<Category> getCategoriesByProduct(Product product) {
         return categoryRepo.findAllByProductsContains(product);
     }
 
-    public ResponseEntity<?> placeCategory(CategoryRequest categoryRequest){
-        Category category = new Category(null, categoryRequest.getName(),categoryRequest.getTitle(),
-                categoryRequest.getParentId(),null);
+    public ResponseEntity<?> placeCategory(CategoryRequest categoryRequest) {
+        Category category = new Category(null, categoryRequest.getName(), categoryRequest.getTitle(),
+                categoryRequest.getParentId(), null);
         List<Product> products = new ArrayList<>();
         for (String productName : categoryRequest.getProducts()) {
             Product product = getProductByName(productName);
@@ -353,10 +379,10 @@ public class StockService {
         }
         category.setProducts(products);
         saveCategory(category);
-        return ResponseEntity.ok(new MessageResponse("Category: "+category.getName()+" created successfully"));
+        return ResponseEntity.ok(new MessageResponse("Category: " + category.getName() + " created successfully"));
     }
 
-    public ResponseEntity<?> updateCategory(Long categoryId, CategoryRequest categoryRequest){
+    public ResponseEntity<?> updateCategory(Long categoryId, CategoryRequest categoryRequest) {
         Category category = getCategoryById(categoryId);
         List<Product> products = new ArrayList<>();
         for (String productName : categoryRequest.getProducts()) {
@@ -368,10 +394,10 @@ public class StockService {
         category.setParentId(categoryRequest.getParentId());
         category.setProducts(products);
         saveCategory(category);
-        return ResponseEntity.ok(new MessageResponse("Category: "+category.getName()+" created successfully"));
+        return ResponseEntity.ok(new MessageResponse("Category: " + category.getName() + " created successfully"));
     }
 
-    public ResponseEntity<?> deleteCategory(Long categoryId){
+    public ResponseEntity<?> deleteCategory(Long categoryId) {
         Category category = getCategoryById(categoryId);
         Long parentId = category.getParentId();
         Set<Category> childCategories = categoryRepo.findAllByParentId(categoryId);
@@ -380,7 +406,7 @@ public class StockService {
             saveCategory(childCategory);
         }
         deleteCategory(category);
-        return ResponseEntity.ok(new MessageResponse("Category: "+category.getName()+" deleted successfully"));
+        return ResponseEntity.ok(new MessageResponse("Category: " + category.getName() + " deleted successfully"));
     }
 
     @Transactional
@@ -412,10 +438,12 @@ public class StockService {
     public void deleteCategory(Category category) {
         categoryRepo.delete(category);
     }
+
     @Transactional
     public void removeProduct(Product product) {
         productRepo.delete(product);
     }
+
     @Transactional
     public Category saveCategory(Category category) {
         return categoryRepo.save(category);
