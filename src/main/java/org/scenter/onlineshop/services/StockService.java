@@ -2,11 +2,11 @@ package org.scenter.onlineshop.services;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.scenter.onlineshop.domain.*;
 import org.scenter.onlineshop.repo.CategoryRepo;
 import org.scenter.onlineshop.repo.CommentRepo;
 import org.scenter.onlineshop.repo.ProductRepo;
-import org.scenter.onlineshop.repo.UserRepo;
 import org.scenter.onlineshop.requests.CategoryRequest;
 import org.scenter.onlineshop.requests.CommentRequest;
 import org.scenter.onlineshop.requests.PlaceProductRequest;
@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
+import java.lang.instrument.IllegalClassFormatException;
 import java.util.*;
 
 @Service
@@ -27,7 +28,7 @@ public class StockService {
     private CategoryRepo categoryRepo;
     private ProductRepo productRepo;
     private CommentRepo commentRepo;
-    private FileStorageService fileStorageService
+    private FileStorageService fileStorageService;
 
     // ====================== Product management =========================
 
@@ -66,40 +67,36 @@ public class StockService {
                 placeProductRequest.getSalePrice(),
                 placeProductRequest.getAmount(),
                 null);
-
-        product = saveProduct(product);
-        addPhotosToProduct(product.getId(), files);
+        try {
+            product = addPhotosToProduct(product, files);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+        saveProduct(product);
         return ResponseEntity.ok(new MessageResponse("Product added successfully"));
     }
 
-    public ResponseEntity<?> addPhotosToProduct(Long productId, MultipartFile[] files) {
-        Product product = getProductById(productId);
+    public Product addPhotosToProduct(Product product, MultipartFile[] files) throws IllegalClassFormatException, FileUploadException {
         if (files[0].getContentType() != null) {
             if (files.length <= 10) {
                 if (!fileStorageService.checkImages(files)) {
-                    return ResponseEntity
-                            .badRequest()
-                            .body(new MessageResponse("Error: Wrong format of images."));
+                    throw new IllegalClassFormatException("Error: Wrong format of images.");
                 }
                 List<FileDB> filesDB;
                 try {
                     filesDB = fileStorageService.saveFilesDB(files);
                 } catch (Exception e) {
-                    return ResponseEntity
-                            .badRequest()
-                            .body(new MessageResponse("Error: Fail to upload files :" + e.getMessage()));
+                    throw new FileUploadException("Error: Fail to upload files :" + e.getMessage());
                 }
                 List<ProductFile> productFiles = new ArrayList<>();
                 filesDB.forEach(file -> productFiles.add(fileStorageService.saveProductFile(file)));
                 product.setImages(productFiles);
             } else {
-                return ResponseEntity
-                        .badRequest()
-                        .body(new MessageResponse("Error: Too many files to upload."));
+                throw new FileUploadException ("Error: Too many files to upload.");
             }
             saveProduct(product);
         }
-        return ResponseEntity.ok(new MessageResponse("Photos added successfully"));
+        return product;
     }
 
     public ResponseEntity<?> updateProduct(Long productId, PlaceProductRequest placeProductRequest) {
@@ -141,13 +138,6 @@ public class StockService {
     public ResponseEntity<?> postComment(CommentRequest commentRequest,
                                          String productName,
                                          MultipartFile[] files) {
-
-//        if (!userRepo.existsByEmail(commentRequest.getUserEmail())){
-//            log.error("User with id " + commentRequest.getUserEmail() + "not found");
-//            return ResponseEntity
-//                    .badRequest()
-//                    .body(new MessageResponse("User with email " + commentRequest.getUserEmail() + "not found"));
-//        }
 
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         Comment comment = new Comment(
