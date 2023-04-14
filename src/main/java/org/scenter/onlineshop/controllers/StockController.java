@@ -22,7 +22,7 @@ public class StockController {
     // ====================== Comment management =========================
 
     @PostMapping("/{product}/postComment")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<?> postComment(@PathVariable String product,
                                          @Valid @RequestPart CommentRequest commentRequest,
                                          @RequestPart MultipartFile[] files) {
@@ -30,7 +30,7 @@ public class StockController {
     }
 
     @DeleteMapping("/{product}/deleteComment")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<?> deleteComment(@PathVariable String product,
                                            @Valid @RequestBody CommentRequest commentRequest) {
 

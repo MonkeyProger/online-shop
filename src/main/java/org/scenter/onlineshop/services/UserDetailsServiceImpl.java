@@ -18,8 +18,12 @@ import java.util.List;
 @Slf4j
 public class UserDetailsServiceImpl implements UserDetailsService {
 
+    private final UserRepo userRepo;
+
     @Autowired
-    UserRepo userRepo;
+    public UserDetailsServiceImpl(UserRepo userRepo) {
+        this.userRepo = userRepo;
+    }
 
     @Override
     @Transactional

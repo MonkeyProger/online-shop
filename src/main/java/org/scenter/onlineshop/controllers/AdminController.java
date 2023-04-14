@@ -85,7 +85,6 @@ public class AdminController {
         return stockService.placeProduct(placeProductRequest,files);
     }
 
-
     @PostMapping ("/updateProduct/{productId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateProduct(@PathVariable Long productId,
@@ -97,6 +96,13 @@ public class AdminController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteProduct(@PathVariable Long productId) {
         return stockService.removeProduct(productId);
+    }
+
+    @PostMapping("/postCharact/{productId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> setCharacteristic(@PathVariable Long productId,
+                                               @Valid @RequestBody CharacteristicRequest charactRequest){
+        return stockService.setCharacteristic(productId, charactRequest);
     }
 
     //  ===================================        Categories management         =======================================

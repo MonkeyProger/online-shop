@@ -32,30 +32,6 @@ public class ShopService {
     private StockService stockService;
     private EmailService emailService;
 
-    private float getCartCost(Set<SaleProduct> productSet){
-        float totalSum = 0f;
-        float currentSum;
-        int newAmount = 0;
-
-        for (SaleProduct cartProduct : productSet) {
-            Long productId = cartProduct.getProductId();
-            Product product = stockService.getProductById(productId);
-            if (product.getAmount() < cartProduct.getAmount()){
-                currentSum = product.getPrice() * product.getAmount();
-                cartProduct.setAmount(product.getAmount());
-                saveSaleProduct(cartProduct);
-            } else {
-                currentSum = product.getPrice() * cartProduct.getAmount();
-                newAmount = product.getAmount() - cartProduct.getAmount();
-            }
-            totalSum += currentSum;
-            product.setAmount(newAmount);
-            newAmount = 0;
-            stockService.saveProduct(product);
-        }
-        return totalSum;
-    }
-
     private Set<Product> isCartInStock(Set<SaleProduct> productSet){
         Set<Product> notAvailableProducts = new HashSet<>();
         Set<Product> productForSave = new HashSet<>();
@@ -202,17 +178,7 @@ public class ShopService {
     }
 
     @Transactional
-    public void saveSaleProduct(SaleProduct saleProduct){
-        saleProductRepo.save(saleProduct);
-    }
-
-    @Transactional
     public void saveOrdering(Ordering order){
         orderingRepo.save(order);
-    }
-
-    @Transactional
-    public void closeOrdering(Long orderId){
-        orderingRepo.deleteById(orderId);
     }
 }

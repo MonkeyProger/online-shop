@@ -40,4 +40,8 @@ public class Product {
     @LazyCollection(LazyCollectionOption.FALSE)
     private List<ProductFile> images = new ArrayList<>();
 
+    @OneToMany
+    @LazyCollection(LazyCollectionOption.FALSE)
+    private List<Characteristic> characteristics = new ArrayList<>();
+
 }

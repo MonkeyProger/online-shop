@@ -1,16 +1,15 @@
 package org.scenter.onlineshop.services;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scenter.onlineshop.domain.*;
-import org.scenter.onlineshop.repo.CategoryRepo;
-import org.scenter.onlineshop.repo.CommentRepo;
-import org.scenter.onlineshop.repo.ProductRepo;
-import org.scenter.onlineshop.repo.UserRepo;
+import org.scenter.onlineshop.repo.*;
 import org.scenter.onlineshop.requests.CategoryRequest;
+import org.scenter.onlineshop.requests.CharacteristicRequest;
 import org.scenter.onlineshop.requests.CommentRequest;
 import org.scenter.onlineshop.requests.PlaceProductRequest;
 import org.scenter.onlineshop.responses.MessageResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,12 +21,16 @@ import java.util.*;
 
 @Service
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class StockService {
-    private CategoryRepo categoryRepo;
-    private ProductRepo productRepo;
-    private CommentRepo commentRepo;
-    private FileStorageService fileStorageService
+
+    private final CategoryRepo categoryRepo;
+    private final ProductRepo productRepo;
+    private final CommentRepo commentRepo;
+    private final FileStorageService fileStorageService;
+    private final CharacteristicRepo characteristicRepo;
+    private final CharacteristicValueRepo characteristicValueRepo;
+
 
     // ====================== Product management =========================
 
@@ -65,6 +68,7 @@ public class StockService {
                 placeProductRequest.getPrice(),
                 placeProductRequest.getSalePrice(),
                 placeProductRequest.getAmount(),
+                null,
                 null);
 
         product = saveProduct(product);
@@ -137,17 +141,52 @@ public class StockService {
         return ResponseEntity.ok(new MessageResponse("Product: " + product.getName() + " deleted successfully"));
     }
 
+    // ===================== Characteristic management ===================
+
+    public ResponseEntity<?> setCharacteristic(Long productId, CharacteristicRequest characteristicRequest) {
+        Optional<Characteristic> optionalCharacteristic =
+                characteristicRepo.findByName(characteristicRequest.getName());
+
+        Characteristic characteristic;
+        if (!optionalCharacteristic.isPresent()) {
+            characteristic = new Characteristic();
+            characteristic.setName(characteristic.getName());
+
+        } else {
+            characteristic = optionalCharacteristic.get();
+        }
+
+        Optional<CharacteristicValue> optionalCharacteristicValue =
+                characteristicValueRepo.findByValue(characteristicRequest.getValue());
+
+        CharacteristicValue characteristicValue;
+        if (!optionalCharacteristicValue.isPresent()) {
+            characteristicValue = new CharacteristicValue();
+            characteristicValue.setValue(characteristicRequest.getValue());
+        } else {
+            characteristicValue = optionalCharacteristicValue.get();
+        }
+
+
+        characteristic.setValue(characteristicValue);
+
+        Product product = productRepo.getReferenceById(productId);
+        List<Characteristic> productCharacteristic = product.getCharacteristics();
+        productCharacteristic.add(characteristic);
+
+        product.setCharacteristics(productCharacteristic);
+        saveCharacteristicValue(characteristicValue);
+        saveCharacteristic(characteristic);
+        saveProduct(product);
+
+        return ResponseEntity.ok(new MessageResponse("Characteristic " + characteristic.getName() + " = " +
+                characteristicValue.getValue() + " added to product " + product.getName() + " successfully"));
+    }
+
     // ====================== Comment management =========================
     public ResponseEntity<?> postComment(CommentRequest commentRequest,
                                          String productName,
                                          MultipartFile[] files) {
-
-//        if (!userRepo.existsByEmail(commentRequest.getUserEmail())){
-//            log.error("User with id " + commentRequest.getUserEmail() + "not found");
-//            return ResponseEntity
-//                    .badRequest()
-//                    .body(new MessageResponse("User with email " + commentRequest.getUserEmail() + "not found"));
-//        }
 
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         Comment comment = new Comment(
@@ -230,10 +269,10 @@ public class StockService {
                     .body(new MessageResponse("Comment with id " + commentId + " is not presented"));
         }
 
-        if (!SecurityContextHolder.getContext().getAuthentication()
+        if (SecurityContextHolder.getContext().getAuthentication()
                 .getAuthorities()
                 .stream()
-                .anyMatch(a -> a.getAuthority().equals("ADMIN"))) {
+                .noneMatch(a -> a.getAuthority().equals("ADMIN"))) {
 
             String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
@@ -407,6 +446,16 @@ public class StockService {
         }
         deleteCategory(category);
         return ResponseEntity.ok(new MessageResponse("Category: " + category.getName() + " deleted successfully"));
+    }
+
+    @Transactional
+    public void saveCharacteristicValue(CharacteristicValue characteristicValue) {
+        characteristicValueRepo.save(characteristicValue);
+    }
+
+    @Transactional
+    public void saveCharacteristic(Characteristic characteristic) {
+        characteristicRepo.save(characteristic);
     }
 
     @Transactional
