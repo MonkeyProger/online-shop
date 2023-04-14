@@ -55,7 +55,7 @@ public class AdminController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> forceDeleteComment(@PathVariable String product,
                                                 @Valid @RequestBody CommentRequest commentRequest) {
-        return stockService.deleteComment(commentRequest.getCommentId(),product);
+        return stockService.deleteComment(commentRequest.getCommentId(), product);
     }
 
     @DeleteMapping("/deleteComments/{product}")
@@ -70,7 +70,7 @@ public class AdminController {
         return stockService.deleteCommentPhotos(commentId);
     }
 
-    @GetMapping ("/getUserComments/{userEmail}")
+    @GetMapping("/getUserComments/{userEmail}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getCommentsByUserEmail(@PathVariable String userEmail) {
         return ResponseEntity.ok().body(stockService.getAllCommentsByUserEmail(userEmail));
@@ -78,64 +78,71 @@ public class AdminController {
 
     //  =============================        Products management         ====================================
 
-    @PostMapping ("/placeProduct")
+    @PostMapping("/placeProduct")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> placeProduct(@Valid @RequestPart PlaceProductRequest placeProductRequest,
                                           @RequestPart MultipartFile[] files) {
-        return stockService.placeProduct(placeProductRequest,files);
+        return stockService.placeProduct(placeProductRequest, files);
     }
 
-    @PostMapping ("/updateProduct/{productId}")
+    @PostMapping("/updateProduct/{productId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateProduct(@PathVariable Long productId,
                                            @Valid @RequestBody PlaceProductRequest placeProductRequest) {
-        return stockService.updateProduct(productId,placeProductRequest);
+        return stockService.updateProduct(productId, placeProductRequest);
     }
 
-    @DeleteMapping ("/deleteProduct/{productId}")
+    @DeleteMapping("/deleteProduct/{productId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteProduct(@PathVariable Long productId) {
         return stockService.removeProduct(productId);
     }
 
-    @PostMapping("/postCharact/{productId}")
+    @PostMapping("/postCharact/{productName}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> setCharacteristic(@PathVariable Long productId,
-                                               @Valid @RequestBody CharacteristicRequest charactRequest){
-        return stockService.setCharacteristic(productId, charactRequest);
+    public ResponseEntity<?> setCharacteristic(@PathVariable String productName,
+                                               @Valid @RequestBody CharacteristicRequest charactRequest) {
+        return stockService.setCharacteristic(productName, charactRequest);
+    }
+
+    @PostMapping("/deleteCharact/{productName}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> deleteCharacteristic(@PathVariable String productName,
+                                                  @Valid @RequestBody CharacteristicRequest charactRequest) {
+        return stockService.deleteCharacteristic(productName, charactRequest.getName());
     }
 
     //  ===================================        Categories management         =======================================
 
-    @PostMapping ("/placeCategory")
+    @PostMapping("/placeCategory")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> placeCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
         return stockService.placeCategory(categoryRequest);
     }
 
-    @PostMapping ("/updateCategory/{categoryId}")
+    @PostMapping("/updateCategory/{categoryId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateCategory(@PathVariable Long categoryId,
-                                           @Valid @RequestBody CategoryRequest categoryRequest) {
-        return stockService.updateCategory(categoryId,categoryRequest);
+                                            @Valid @RequestBody CategoryRequest categoryRequest) {
+        return stockService.updateCategory(categoryId, categoryRequest);
     }
 
-    @PostMapping ("/deleteCategory/{categoryId}")
+    @PostMapping("/deleteCategory/{categoryId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteCategory(@PathVariable Long categoryId) {
         return stockService.deleteCategory(categoryId);
     }
 
-    @PostMapping ("/link{childId}/to{parentId}")
+    @PostMapping("/link{childId}/to{parentId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> linkCategoryToParent(@PathVariable Long childId, @PathVariable Long parentId) {
-        return ResponseEntity.ok().body(stockService.saveParentToCategory(childId,parentId));
+        return ResponseEntity.ok().body(stockService.saveParentToCategory(childId, parentId));
     }
 
-    @PostMapping ("/link{productId}/to{categoryId}")
+    @PostMapping("/link{productId}/to{categoryId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> linkProductToCategory(@PathVariable Long productId, @PathVariable Long categoryId) {
-        return ResponseEntity.ok().body(stockService.saveProductToCategory(productId,categoryId));
+        return ResponseEntity.ok().body(stockService.saveProductToCategory(productId, categoryId));
     }
     //  ===================================        Files management         ============================================
 
@@ -143,38 +150,38 @@ public class AdminController {
 
     @GetMapping("/allOrders")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> getAllOrders(){
+    public ResponseEntity<?> getAllOrders() {
         return ResponseEntity.ok().body(shopService.getAllOrders());
     }
 
     @GetMapping("/saleProducts")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> getSaleProducts(){
+    public ResponseEntity<?> getSaleProducts() {
         return ResponseEntity.ok().body(shopService.getAllSaleProducts());
     }
 
     @GetMapping("/allActiveOrders")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> getAllActiveOrders(){
+    public ResponseEntity<?> getAllActiveOrders() {
         return ResponseEntity.ok().body(shopService.getAllActiveOrders());
     }
 
     @GetMapping("/allOrders/{email}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> getAllOrdersByEmail(@PathVariable String email){
+    public ResponseEntity<?> getAllOrdersByEmail(@PathVariable String email) {
         return ResponseEntity.ok().body(shopService.getAllOrdersByEmail(email));
     }
 
     @PostMapping("/updateOrder/{orderId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateOrder(@Valid @RequestBody PlaceOrderRequest placeOrderRequest,
-                                         @PathVariable Long orderId){
-        return ResponseEntity.ok().body(shopService.updateOrder(placeOrderRequest,orderId));
+                                         @PathVariable Long orderId) {
+        return ResponseEntity.ok().body(shopService.updateOrder(placeOrderRequest, orderId));
     }
 
     @DeleteMapping("/deleteOrder")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> deleteOrder(@Valid @RequestBody CloseOrderRequest closeOrderRequest){
+    public ResponseEntity<?> deleteOrder(@Valid @RequestBody CloseOrderRequest closeOrderRequest) {
         return ResponseEntity.ok().body(shopService.closeOrder(closeOrderRequest));
     }
 }

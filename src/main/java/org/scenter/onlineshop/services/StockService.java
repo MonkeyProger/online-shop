@@ -51,7 +51,7 @@ public class StockService {
     public Product getProductByName(String productName) {
         Optional<Product> product = productRepo.findByName(productName);
         if (!product.isPresent()) {
-            log.error("Product with name " + productName + "not found");
+            log.error("Product with name " + productName + " not found");
             throw new NoSuchElementException("Product with name " + productName + "not found");
         }
         log.info("Product '{}' found in the database", productName);
@@ -143,14 +143,14 @@ public class StockService {
 
     // ===================== Characteristic management ===================
 
-    public ResponseEntity<?> setCharacteristic(Long productId, CharacteristicRequest characteristicRequest) {
+    public ResponseEntity<?> setCharacteristic(String productName, CharacteristicRequest characteristicRequest) {
         Optional<Characteristic> optionalCharacteristic =
                 characteristicRepo.findByName(characteristicRequest.getName());
 
         Characteristic characteristic;
         if (!optionalCharacteristic.isPresent()) {
             characteristic = new Characteristic();
-            characteristic.setName(characteristic.getName());
+            characteristic.setName(characteristicRequest.getName());
 
         } else {
             characteristic = optionalCharacteristic.get();
@@ -162,25 +162,54 @@ public class StockService {
         CharacteristicValue characteristicValue;
         if (!optionalCharacteristicValue.isPresent()) {
             characteristicValue = new CharacteristicValue();
+
             characteristicValue.setValue(characteristicRequest.getValue());
         } else {
             characteristicValue = optionalCharacteristicValue.get();
         }
 
-
+        saveCharacteristicValue(characteristicValue);
         characteristic.setValue(characteristicValue);
+        saveCharacteristic(characteristic);
 
-        Product product = productRepo.getReferenceById(productId);
+        Product product = getProductByName(productName);
         List<Characteristic> productCharacteristic = product.getCharacteristics();
         productCharacteristic.add(characteristic);
 
+
+
+
         product.setCharacteristics(productCharacteristic);
-        saveCharacteristicValue(characteristicValue);
-        saveCharacteristic(characteristic);
+
         saveProduct(product);
 
         return ResponseEntity.ok(new MessageResponse("Characteristic " + characteristic.getName() + " = " +
                 characteristicValue.getValue() + " added to product " + product.getName() + " successfully"));
+    }
+
+    public ResponseEntity<?> deleteCharacteristic(String productName, String characteristicName) {
+        Optional<Characteristic> optionalCharacteristic = characteristicRepo.findByName(characteristicName);
+        if (!optionalCharacteristic.isPresent()) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("characteristic with name " + characteristicName + " is not presented"));
+        }
+        Characteristic characteristicToDelete = optionalCharacteristic.get();
+
+        Product product = getProductByName(productName);
+        List<Characteristic> productCharacteristics = product.getCharacteristics();
+        if (!productCharacteristics.contains(characteristicToDelete)) {
+            log.error("Characteristic is not presented in product: " + product.getName());
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Characteristic is not presented in product: " + product.getName()));
+        }
+
+        productCharacteristics.remove(characteristicToDelete);
+        product.setCharacteristics(productCharacteristics);
+        saveProduct(product);
+
+        return ResponseEntity.ok(new MessageResponse("Characteristic " + characteristicToDelete.getName() + " = " +
+                characteristicToDelete.getValue().getValue() + " deleted successfully"));
     }
 
     // ====================== Comment management =========================
