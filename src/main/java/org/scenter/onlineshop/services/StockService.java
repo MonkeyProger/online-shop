@@ -143,48 +143,100 @@ public class StockService {
 
     // ===================== Characteristic management ===================
 
+    public ResponseEntity<?> setCharacteristicOnCategory(Long categoryId, CharacteristicRequest characteristicRequest) {
+        Characteristic characteristic = getCharacteristicName(characteristicRequest);
+
+        CharacteristicValue characteristicValue = getCharacteristicValue(characteristicRequest);
+
+        saveCharacteristicValue(characteristicValue);
+        characteristic.setValue(characteristicValue);
+        saveCharacteristic(characteristic);
+
+        Category category = getCategoryById(categoryId);
+        List<Characteristic> categoryCharacteristic = category.getCharacteristics();
+        categoryCharacteristic.add(characteristic);
+        category.setCharacteristics(categoryCharacteristic);
+
+        List<Product> products = category.getProducts();
+        for (Product product : products) {
+            setCharacteristic(product, characteristic);
+        }
+        category.setProducts(products);
+
+        saveCategory(category);
+
+        return ResponseEntity.ok(new MessageResponse("Characteristic " + characteristic.getName() + " = " +
+                characteristicValue.getValue() + " added to category " + category.getName() + " successfully"));
+    }
+
+    private void setCharacteristic(Product product, Characteristic characteristic) {
+        List<Characteristic> productCharacteristic = product.getCharacteristics();
+        productCharacteristic.add(characteristic);
+        product.setCharacteristics(productCharacteristic);
+        saveProduct(product);
+    }
+
     public ResponseEntity<?> setCharacteristic(String productName, CharacteristicRequest characteristicRequest) {
-        Optional<Characteristic> optionalCharacteristic =
-                characteristicRepo.findByName(characteristicRequest.getName());
 
-        Characteristic characteristic;
-        if (!optionalCharacteristic.isPresent()) {
-            characteristic = new Characteristic();
-            characteristic.setName(characteristicRequest.getName());
+        Characteristic characteristic = getCharacteristicName(characteristicRequest);
 
-        } else {
-            characteristic = optionalCharacteristic.get();
-        }
-
-        Optional<CharacteristicValue> optionalCharacteristicValue =
-                characteristicValueRepo.findByValue(characteristicRequest.getValue());
-
-        CharacteristicValue characteristicValue;
-        if (!optionalCharacteristicValue.isPresent()) {
-            characteristicValue = new CharacteristicValue();
-
-            characteristicValue.setValue(characteristicRequest.getValue());
-        } else {
-            characteristicValue = optionalCharacteristicValue.get();
-        }
+        CharacteristicValue characteristicValue = getCharacteristicValue(characteristicRequest);
 
         saveCharacteristicValue(characteristicValue);
         characteristic.setValue(characteristicValue);
         saveCharacteristic(characteristic);
 
         Product product = getProductByName(productName);
-        List<Characteristic> productCharacteristic = product.getCharacteristics();
-        productCharacteristic.add(characteristic);
 
-
-
-
-        product.setCharacteristics(productCharacteristic);
-
-        saveProduct(product);
+        setCharacteristic(product, characteristic);
 
         return ResponseEntity.ok(new MessageResponse("Characteristic " + characteristic.getName() + " = " +
                 characteristicValue.getValue() + " added to product " + product.getName() + " successfully"));
+    }
+
+    public ResponseEntity<?> deleteCharacteristicOnCategory(Long categoryId,
+                                                            CharacteristicRequest characteristicRequest) {
+        Optional<Characteristic> optionalCharacteristic =
+                characteristicRepo.findByName(characteristicRequest.getName());
+        if (!optionalCharacteristic.isPresent()) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("characteristic with name "
+                            + characteristicRequest.getName() + " is not presented"));
+        }
+        Characteristic characteristicToDelete = optionalCharacteristic.get();
+
+        Category category = getCategoryById(categoryId);
+        List<Characteristic> characteristics = category.getCharacteristics();
+        if (!characteristics.contains(characteristicToDelete)) {
+            log.error("Characteristic is not presented in category: " + category.getName());
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Characteristic is not presented in product: " + category.getName()));
+        }
+
+        characteristics.remove(characteristicToDelete);
+        category.setCharacteristics(characteristics);
+
+        category.getProducts().forEach(p -> deleteCharacteristic(p, characteristicToDelete));
+        saveCategory(category);
+
+        return ResponseEntity.ok(new MessageResponse("Characteristic '" + characteristicRequest.getName() + " = " +
+                characteristicRequest.getValue() + "' deleted successfully"));
+    }
+
+    private ResponseEntity<?> deleteCharacteristic(Product product, Characteristic characteristic) {
+        List<Characteristic> productCharacteristics = product.getCharacteristics();
+        if (!productCharacteristics.contains(characteristic)) {
+            log.error("Characteristic is not presented in product: " + product.getName());
+            throw new NoSuchElementException("Characteristic is not presented in product: " + product.getName());
+        }
+
+        productCharacteristics.remove(characteristic);
+//        product.setCharacteristics(productCharacteristics);
+        saveProduct(product);
+
+        return ResponseEntity.ok(new MessageResponse("Characteristic '" + characteristic.getName() + " = " +
+                characteristic.getValue().getValue() + "' deleted successfully"));
     }
 
     public ResponseEntity<?> deleteCharacteristic(String productName, String characteristicName) {
@@ -196,20 +248,33 @@ public class StockService {
         Characteristic characteristicToDelete = optionalCharacteristic.get();
 
         Product product = getProductByName(productName);
-        List<Characteristic> productCharacteristics = product.getCharacteristics();
-        if (!productCharacteristics.contains(characteristicToDelete)) {
-            log.error("Characteristic is not presented in product: " + product.getName());
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Characteristic is not presented in product: " + product.getName()));
+        return deleteCharacteristic(product, characteristicToDelete);
+    }
+
+    private Characteristic getCharacteristicName(CharacteristicRequest characteristicRequest) {
+        Optional<Characteristic> optionalCharacteristic =
+                characteristicRepo.findByName(characteristicRequest.getName());
+
+        if (!optionalCharacteristic.isPresent()) {
+            Characteristic characteristic = new Characteristic();
+            characteristic.setName(characteristicRequest.getName());
+            return characteristic;
+
+        }
+        return optionalCharacteristic.get();
+    }
+
+    private CharacteristicValue getCharacteristicValue(CharacteristicRequest characteristicRequest) {
+        Optional<CharacteristicValue> optionalCharacteristicValue =
+                characteristicValueRepo.findByValue(characteristicRequest.getValue());
+
+        if (!optionalCharacteristicValue.isPresent()) {
+            CharacteristicValue characteristicValue = new CharacteristicValue();
+            characteristicValue.setValue(characteristicRequest.getValue());
+            return characteristicValue;
         }
 
-        productCharacteristics.remove(characteristicToDelete);
-        product.setCharacteristics(productCharacteristics);
-        saveProduct(product);
-
-        return ResponseEntity.ok(new MessageResponse("Characteristic " + characteristicToDelete.getName() + " = " +
-                characteristicToDelete.getValue().getValue() + " deleted successfully"));
+        return optionalCharacteristicValue.get();
     }
 
     // ====================== Comment management =========================
@@ -439,7 +504,8 @@ public class StockService {
 
     public ResponseEntity<?> placeCategory(CategoryRequest categoryRequest) {
         Category category = new Category(null, categoryRequest.getName(), categoryRequest.getTitle(),
-                categoryRequest.getParentId(), null);
+                categoryRequest.getParentId(), null, null);
+
         List<Product> products = new ArrayList<>();
         for (String productName : categoryRequest.getProducts()) {
             Product product = getProductByName(productName);

@@ -14,8 +14,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.ArrayList;
-
 import static org.scenter.onlineshop.domain.ERole.ROLE_ADMIN;
 
 @SpringBootApplication
@@ -42,12 +40,12 @@ public class OnlineShopApplication {
 			stockService.saveProduct(new Product(null,"CaseHuaweiP50","Наушники Apple AirPods Pro",null,15f,null,200,null, null));
 			stockService.saveProduct(new Product(null,"YandexStation","Умная колонка Яндекс Станция",null,20f,null,200,null, null));
 
-			stockService.saveCategory(new Category(null,"Smartphones","Смартфоны",null,new ArrayList<>()));
-			stockService.saveCategory(new Category(null,"Apple","Apple", null,new ArrayList<>()));
-			stockService.saveCategory(new Category(null,"Samsung","Samsung",null,new ArrayList<>()));
-			stockService.saveCategory(new Category(null,"AudioEquipment","Аудиотехника",null,new ArrayList<>()));
-			stockService.saveCategory(new Category(null,"Headphones","Наушники",null,new ArrayList<>()));
-			stockService.saveCategory(new Category(null,"PortableSpeakers","Портативные колонки",null,new ArrayList<>()));
+			stockService.saveCategory(new Category(null, "Smartphones", "Смартфоны", null, null, null));
+			stockService.saveCategory(new Category(null,"Apple","Apple", null, null,null));
+			stockService.saveCategory(new Category(null,"Samsung","Samsung",null, null,null));
+			stockService.saveCategory(new Category(null,"AudioEquipment","Аудиотехника",null, null,null));
+			stockService.saveCategory(new Category(null,"Headphones","Наушники",null, null,null));
+			stockService.saveCategory(new Category(null,"PortableSpeakers","Портативные колонки",null, null,null));
 
 			stockService.saveParentToCategory("Apple","Smartphones");
 			stockService.saveParentToCategory("Samsung","Smartphones");

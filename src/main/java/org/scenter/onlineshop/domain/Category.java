@@ -2,6 +2,8 @@ package org.scenter.onlineshop.domain;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -12,7 +14,8 @@ import static javax.persistence.FetchType.EAGER;
 
 @Entity
 @Data
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class Category {
 
     @Id @GeneratedValue(strategy = AUTO)
@@ -26,5 +29,9 @@ public class Category {
 
     @OneToMany(fetch = EAGER)
     private List<Product> products = new ArrayList<>();
+
+    @OneToMany
+    @LazyCollection(LazyCollectionOption.FALSE)
+    private List<Characteristic> characteristics = new ArrayList<>();
 
 }

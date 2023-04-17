@@ -98,6 +98,21 @@ public class AdminController {
         return stockService.removeProduct(productId);
     }
 
+    //  ===================================        Characteristics management         ==================================
+    @PostMapping("/postCharactOnCategory/{categoryId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> setCharacteristicOnCategory (@PathVariable Long categoryId,
+                                                          @Valid @RequestBody CharacteristicRequest charactRequest) {
+        return stockService.setCharacteristicOnCategory(categoryId, charactRequest);
+    }
+
+    @PostMapping("/deletetCharactFromCategory/{categoryId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> deleteCharacteristicOnCategory (@PathVariable Long categoryId,
+                                                          @Valid @RequestBody CharacteristicRequest charactRequest) {
+        return stockService.deleteCharacteristicOnCategory(categoryId, charactRequest);
+    }
+
     @PostMapping("/postCharact/{productName}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> setCharacteristic(@PathVariable String productName,
