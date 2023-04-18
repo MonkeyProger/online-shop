@@ -2,6 +2,7 @@ package org.scenter.onlineshop.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.scenter.onlineshop.domain.*;
 import org.scenter.onlineshop.repo.*;
 import org.scenter.onlineshop.requests.CategoryRequest;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
+import java.lang.instrument.IllegalClassFormatException;
 import java.util.*;
 
 @Service
@@ -70,40 +72,36 @@ public class StockService {
                 placeProductRequest.getAmount(),
                 null,
                 null);
-
-        product = saveProduct(product);
-        addPhotosToProduct(product.getId(), files);
+        try {
+            product = addPhotosToProduct(product, files);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+        saveProduct(product);
         return ResponseEntity.ok(new MessageResponse("Product added successfully"));
     }
 
-    public ResponseEntity<?> addPhotosToProduct(Long productId, MultipartFile[] files) {
-        Product product = getProductById(productId);
+    public Product addPhotosToProduct(Product product, MultipartFile[] files) throws IllegalClassFormatException, FileUploadException {
         if (files[0].getContentType() != null) {
             if (files.length <= 10) {
                 if (!fileStorageService.checkImages(files)) {
-                    return ResponseEntity
-                            .badRequest()
-                            .body(new MessageResponse("Error: Wrong format of images."));
+                    throw new IllegalClassFormatException("Error: Wrong format of images.");
                 }
                 List<FileDB> filesDB;
                 try {
                     filesDB = fileStorageService.saveFilesDB(files);
                 } catch (Exception e) {
-                    return ResponseEntity
-                            .badRequest()
-                            .body(new MessageResponse("Error: Fail to upload files :" + e.getMessage()));
+                    throw new FileUploadException("Error: Fail to upload files :" + e.getMessage());
                 }
                 List<ProductFile> productFiles = new ArrayList<>();
                 filesDB.forEach(file -> productFiles.add(fileStorageService.saveProductFile(file)));
                 product.setImages(productFiles);
             } else {
-                return ResponseEntity
-                        .badRequest()
-                        .body(new MessageResponse("Error: Too many files to upload."));
+                throw new FileUploadException ("Error: Too many files to upload.");
             }
             saveProduct(product);
         }
-        return ResponseEntity.ok(new MessageResponse("Photos added successfully"));
+        return product;
     }
 
     public ResponseEntity<?> updateProduct(Long productId, PlaceProductRequest placeProductRequest) {
