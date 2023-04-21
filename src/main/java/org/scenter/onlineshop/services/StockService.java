@@ -140,7 +140,7 @@ public class StockService {
 
     // ===================== Characteristic management ===================
     private void setCharacteristic(Product product, Characteristic characteristic) {
-        List<Characteristic> productCharacteristic = product.getCharacteristics();
+        Set<Characteristic> productCharacteristic = product.getCharacteristics();
         productCharacteristic.add(characteristic);
         product.setCharacteristics(productCharacteristic);
         saveProduct(product);
@@ -165,7 +165,7 @@ public class StockService {
     }
 
     private ResponseEntity<?> deleteCharacteristic(Product product, Characteristic characteristic) {
-        List<Characteristic> productCharacteristics = product.getCharacteristics();
+        Set<Characteristic> productCharacteristics = product.getCharacteristics();
         if (!productCharacteristics.contains(characteristic)) {
             log.error("Characteristic is not presented in product: " + product.getName());
             throw new NoSuchElementException("Characteristic is not presented in product: " + product.getName());
@@ -473,13 +473,6 @@ public class StockService {
 
     public ResponseEntity<?> deleteCategory(Long categoryId) {
         Category category = getCategoryById(categoryId);
-//        Long parentId = category.getParentId();
-//        Set<Category> childCategories = categoryRepo.findAllByParentId(categoryId);
-//        for (Category childCategory : childCategories) {
-//            childCategory.setParentId(parentId);
-//            saveCategory(childCategory);
-//        }
-//        deleteCategory(category);
         deepDeleteCategory(category);
         return ResponseEntity.ok(new MessageResponse("Category: " + category.getName() + " deleted successfully"));
     }
