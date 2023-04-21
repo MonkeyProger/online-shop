@@ -4,7 +4,6 @@ package org.scenter.onlineshop;
 import org.scenter.onlineshop.domain.AppUser;
 import org.scenter.onlineshop.domain.Category;
 import org.scenter.onlineshop.domain.Product;
-import org.scenter.onlineshop.services.FileStorageService;
 import org.scenter.onlineshop.services.StockService;
 import org.scenter.onlineshop.services.UserDetailsServiceImpl;
 import org.springframework.boot.CommandLineRunner;
@@ -24,11 +23,9 @@ public class OnlineShopApplication {
 
 	@Bean
 	CommandLineRunner run(UserDetailsServiceImpl userDetailsService,
-						  FileStorageService fileStorageService,
 						  StockService stockService) {
 		PasswordEncoder encoder = new BCryptPasswordEncoder();
 		return args -> {
-
 			AppUser admin = new AppUser("admin","admin","admin@admin.admin",encoder.encode("admin"), ROLE_ADMIN);
 			userDetailsService.saveUser(admin);
 
@@ -40,12 +37,12 @@ public class OnlineShopApplication {
 			stockService.saveProduct(new Product(null,"CaseHuaweiP50","Наушники Apple AirPods Pro",null,15f,null,200,null, null));
 			stockService.saveProduct(new Product(null,"YandexStation","Умная колонка Яндекс Станция",null,20f,null,200,null, null));
 
-			stockService.saveCategory(new Category(null, "Smartphones", "Смартфоны", null, null, null));
-			stockService.saveCategory(new Category(null,"Apple","Apple", null, null,null));
-			stockService.saveCategory(new Category(null,"Samsung","Samsung",null, null,null));
-			stockService.saveCategory(new Category(null,"AudioEquipment","Аудиотехника",null, null,null));
-			stockService.saveCategory(new Category(null,"Headphones","Наушники",null, null,null));
-			stockService.saveCategory(new Category(null,"PortableSpeakers","Портативные колонки",null, null,null));
+			stockService.saveCategory(new Category(null, "Smartphones", "Смартфоны", null, null));
+			stockService.saveCategory(new Category(null,"Apple","Apple", null, null));
+			stockService.saveCategory(new Category(null,"Samsung","Samsung",null, null));
+			stockService.saveCategory(new Category(null,"AudioEquipment","Аудиотехника",null, null));
+			stockService.saveCategory(new Category(null,"Headphones","Наушники",null, null));
+			stockService.saveCategory(new Category(null,"PortableSpeakers","Портативные колонки",null,null));
 
 			stockService.saveParentToCategory("Apple","Smartphones");
 			stockService.saveParentToCategory("Samsung","Smartphones");

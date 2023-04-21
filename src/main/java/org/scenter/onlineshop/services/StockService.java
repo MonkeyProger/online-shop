@@ -25,7 +25,6 @@ import java.util.*;
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class StockService {
-
     private final CategoryRepo categoryRepo;
     private final ProductRepo productRepo;
     private final CommentRepo commentRepo;
@@ -140,33 +139,6 @@ public class StockService {
     }
 
     // ===================== Characteristic management ===================
-
-    public ResponseEntity<?> setCharacteristicOnCategory(Long categoryId, CharacteristicRequest characteristicRequest) {
-        Characteristic characteristic = getCharacteristicName(characteristicRequest);
-
-        CharacteristicValue characteristicValue = getCharacteristicValue(characteristicRequest);
-
-        saveCharacteristicValue(characteristicValue);
-        characteristic.setValue(characteristicValue);
-        saveCharacteristic(characteristic);
-
-        Category category = getCategoryById(categoryId);
-        List<Characteristic> categoryCharacteristic = category.getCharacteristics();
-        categoryCharacteristic.add(characteristic);
-        category.setCharacteristics(categoryCharacteristic);
-
-        List<Product> products = category.getProducts();
-        for (Product product : products) {
-            setCharacteristic(product, characteristic);
-        }
-        category.setProducts(products);
-
-        saveCategory(category);
-
-        return ResponseEntity.ok(new MessageResponse("Characteristic " + characteristic.getName() + " = " +
-                characteristicValue.getValue() + " added to category " + category.getName() + " successfully"));
-    }
-
     private void setCharacteristic(Product product, Characteristic characteristic) {
         List<Characteristic> productCharacteristic = product.getCharacteristics();
         productCharacteristic.add(characteristic);
@@ -190,36 +162,6 @@ public class StockService {
 
         return ResponseEntity.ok(new MessageResponse("Characteristic " + characteristic.getName() + " = " +
                 characteristicValue.getValue() + " added to product " + product.getName() + " successfully"));
-    }
-
-    public ResponseEntity<?> deleteCharacteristicOnCategory(Long categoryId,
-                                                            CharacteristicRequest characteristicRequest) {
-        Optional<Characteristic> optionalCharacteristic =
-                characteristicRepo.findByName(characteristicRequest.getName());
-        if (!optionalCharacteristic.isPresent()) {
-            return ResponseEntity.badRequest()
-                    .body(new MessageResponse("characteristic with name "
-                            + characteristicRequest.getName() + " is not presented"));
-        }
-        Characteristic characteristicToDelete = optionalCharacteristic.get();
-
-        Category category = getCategoryById(categoryId);
-        List<Characteristic> characteristics = category.getCharacteristics();
-        if (!characteristics.contains(characteristicToDelete)) {
-            log.error("Characteristic is not presented in category: " + category.getName());
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Characteristic is not presented in product: " + category.getName()));
-        }
-
-        characteristics.remove(characteristicToDelete);
-        category.setCharacteristics(characteristics);
-
-        category.getProducts().forEach(p -> deleteCharacteristic(p, characteristicToDelete));
-        saveCategory(category);
-
-        return ResponseEntity.ok(new MessageResponse("Characteristic '" + characteristicRequest.getName() + " = " +
-                characteristicRequest.getValue() + "' deleted successfully"));
     }
 
     private ResponseEntity<?> deleteCharacteristic(Product product, Characteristic characteristic) {
@@ -502,7 +444,7 @@ public class StockService {
 
     public ResponseEntity<?> placeCategory(CategoryRequest categoryRequest) {
         Category category = new Category(null, categoryRequest.getName(), categoryRequest.getTitle(),
-                categoryRequest.getParentId(), null, null);
+                categoryRequest.getParentId(), null);
 
         List<Product> products = new ArrayList<>();
         for (String productName : categoryRequest.getProducts()) {
@@ -531,14 +473,24 @@ public class StockService {
 
     public ResponseEntity<?> deleteCategory(Long categoryId) {
         Category category = getCategoryById(categoryId);
-        Long parentId = category.getParentId();
+//        Long parentId = category.getParentId();
+//        Set<Category> childCategories = categoryRepo.findAllByParentId(categoryId);
+//        for (Category childCategory : childCategories) {
+//            childCategory.setParentId(parentId);
+//            saveCategory(childCategory);
+//        }
+//        deleteCategory(category);
+        deepDeleteCategory(category);
+        return ResponseEntity.ok(new MessageResponse("Category: " + category.getName() + " deleted successfully"));
+    }
+
+    public void deepDeleteCategory(Category category) {
+        Long categoryId = category.getId();
         Set<Category> childCategories = categoryRepo.findAllByParentId(categoryId);
         for (Category childCategory : childCategories) {
-            childCategory.setParentId(parentId);
-            saveCategory(childCategory);
+            deepDeleteCategory(childCategory);
         }
         deleteCategory(category);
-        return ResponseEntity.ok(new MessageResponse("Category: " + category.getName() + " deleted successfully"));
     }
 
     @Transactional

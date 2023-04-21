@@ -1,6 +1,6 @@
 package org.scenter.onlineshop.controllers;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.scenter.onlineshop.domain.AppUser;
 import org.scenter.onlineshop.domain.ERole;
 import org.scenter.onlineshop.repo.UserRepo;
@@ -31,18 +31,13 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
-@AllArgsConstructor
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class AuthController {
-    @Autowired
-    UserRepo userRepo;
-    @Autowired
-    UserDetailsServiceImpl userDetailsService;
-    @Autowired
-    PasswordEncoder encoder;
-    @Autowired
-    JWTUtils jwtUtils;
-    @Autowired
-    AuthenticationManager authenticationManager;
+    private final UserRepo userRepo;
+    private final UserDetailsServiceImpl userDetailsService;
+    private final PasswordEncoder encoder;
+    private final JWTUtils jwtUtils;
+    private final AuthenticationManager authenticationManager;
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {

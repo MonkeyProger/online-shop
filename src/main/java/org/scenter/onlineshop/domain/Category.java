@@ -1,16 +1,18 @@
 package org.scenter.onlineshop.domain;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.ManyToMany;
 import java.util.ArrayList;
 import java.util.List;
 
-import static javax.persistence.GenerationType.AUTO;
 import static javax.persistence.FetchType.EAGER;
+import static javax.persistence.GenerationType.AUTO;
 
 @Entity
 @Data
@@ -27,11 +29,6 @@ public class Category {
 
     private Long parentId;
 
-    @OneToMany(fetch = EAGER)
+    @ManyToMany(fetch = EAGER)
     private List<Product> products = new ArrayList<>();
-
-    @OneToMany
-    @LazyCollection(LazyCollectionOption.FALSE)
-    private List<Characteristic> characteristics = new ArrayList<>();
-
 }

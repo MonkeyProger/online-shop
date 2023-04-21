@@ -16,7 +16,6 @@ import javax.validation.Valid;
 @RequestMapping("/api/stock")
 @AllArgsConstructor
 public class StockController {
-
     private StockService stockService;
 
     // ====================== Comment management =========================
