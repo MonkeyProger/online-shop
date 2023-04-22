@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @Slf4j
@@ -38,9 +39,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     public ResponseEntity<?> deleteAppUser(Long userId){
         if (!userRepo.existsById(userId)){
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("User with id "+userId+" is not presented in datatbase"));
+            throw new NoSuchElementException("User with id "+userId+" is not presented in database");
         }
         deleteUser(userId);
         return ResponseEntity.ok(new MessageResponse("User deleted successfully!"));

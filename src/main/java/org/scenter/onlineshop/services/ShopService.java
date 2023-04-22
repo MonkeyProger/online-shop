@@ -13,6 +13,7 @@ import org.scenter.onlineshop.requests.CloseOrderRequest;
 import org.scenter.onlineshop.requests.PlaceOrderRequest;
 import org.scenter.onlineshop.responses.MessageResponse;
 import org.scenter.onlineshop.responses.OrderResponse;
+import org.springframework.expression.AccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -73,14 +74,13 @@ public class ShopService {
         }
         Optional<AppUser> user = userRepo.findByEmail(placeOrderRequest.getEmail());
         if (!user.isPresent()) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Email is not presented!"));
+            throw new NoSuchElementException("Error: Email is not presented!");
         }
         Set<SaleProduct> cart = placeOrderRequest.getOrder();
         float cartCost = placeOrderRequest.getTotal();
         Set<Product> rejectedProducts = isCartInStock(cart);
         if (!rejectedProducts.isEmpty()) {
+
             return ResponseEntity
                     .badRequest()
                     .body(new MessageResponse(("The number of products in the cart exceeds the " +
@@ -99,20 +99,15 @@ public class ShopService {
         return ResponseEntity.ok(orderResponse);
     }
 
-    public ResponseEntity<?> closeOrder(CloseOrderRequest closeOrderRequest) {
+    public ResponseEntity<?> closeOrder(CloseOrderRequest closeOrderRequest) throws AccessException {
         Optional<Ordering> order = orderingRepo.findById(closeOrderRequest.getOrderId());
         if (!order.isPresent()) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Order is not presented!"));
+            throw new NoSuchElementException("Error: Order is not presented!");
         }
         Ordering ordering = order.get();
         if (!isAuthorized(ordering.getUserEmail())){
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Access denied: Not enough rights for this action!"));
+            throw new AccessException("Access denied: Not enough rights for this action!");
         }
-
         ordering.setActive(false);
         saveOrdering(ordering);
         log.info("Order closed successfully..");
@@ -121,11 +116,6 @@ public class ShopService {
 
     public ResponseEntity<?> updateOrder(PlaceOrderRequest placeOrderRequest, Long id) {
         Ordering ordering = getOrderById(id);
-        if (ordering == null) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Order #"+id+" is not found in database"));
-        }
         ordering.setCart(placeOrderRequest.getOrder());
         ordering.setTotal(placeOrderRequest.getTotal());
         ordering.setUserEmail(placeOrderRequest.getEmail());

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.scenter.onlineshop.domain.*;
+import org.scenter.onlineshop.exception.IllegalFormatException;
 import org.scenter.onlineshop.repo.*;
 import org.scenter.onlineshop.requests.CategoryRequest;
 import org.scenter.onlineshop.requests.CharacteristicRequest;
@@ -11,6 +12,7 @@ import org.scenter.onlineshop.requests.CommentRequest;
 import org.scenter.onlineshop.requests.PlaceProductRequest;
 import org.scenter.onlineshop.responses.MessageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.expression.AccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
-import java.lang.instrument.IllegalClassFormatException;
 import java.util.*;
 
 @Service
@@ -60,7 +61,7 @@ public class StockService {
     }
 
     public ResponseEntity<?> placeProduct(PlaceProductRequest placeProductRequest,
-                                          MultipartFile[] files) {
+                                          MultipartFile[] files) throws IllegalFormatException, FileUploadException {
         Product product = new Product(
                 null,
                 placeProductRequest.getName(),
@@ -71,33 +72,29 @@ public class StockService {
                 placeProductRequest.getAmount(),
                 null,
                 null);
-        try {
-            product = addPhotosToProduct(product, files);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
-        }
+        product = addPhotosToProduct(product, files);
         saveProduct(product);
         return ResponseEntity.ok(new MessageResponse("Product added successfully"));
     }
 
-    public Product addPhotosToProduct(Product product, MultipartFile[] files) throws IllegalClassFormatException, FileUploadException {
+    public Product addPhotosToProduct(Product product,
+                                      MultipartFile[] files)throws FileUploadException, IllegalFormatException {
         if (files[0].getContentType() != null) {
-            if (files.length <= 10) {
-                if (!fileStorageService.checkImages(files)) {
-                    throw new IllegalClassFormatException("Error: Wrong format of images.");
-                }
-                List<FileDB> filesDB;
-                try {
-                    filesDB = fileStorageService.saveFilesDB(files);
-                } catch (Exception e) {
-                    throw new FileUploadException("Error: Fail to upload files :" + e.getMessage());
-                }
-                List<ProductFile> productFiles = new ArrayList<>();
-                filesDB.forEach(file -> productFiles.add(fileStorageService.saveProductFile(file)));
-                product.setImages(productFiles);
-            } else {
-                throw new FileUploadException ("Error: Too many files to upload.");
+            if (files.length > 10) {
+                throw new FileUploadException("Error: Too many files to upload.");
             }
+            if (!fileStorageService.checkImages(files)) {
+                throw new IllegalFormatException("Error: Wrong format of images.");
+            }
+            List<FileDB> filesDB;
+            try {
+                filesDB = fileStorageService.saveFilesDB(files);
+            } catch (Exception e) {
+                throw new FileUploadException("Error: Fail to upload files :" + e.getMessage());
+            }
+            List<ProductFile> productFiles = new ArrayList<>();
+            filesDB.forEach(file -> productFiles.add(fileStorageService.saveProductFile(file)));
+            product.setImages(productFiles);
             saveProduct(product);
         }
         return product;
@@ -182,8 +179,7 @@ public class StockService {
     public ResponseEntity<?> deleteCharacteristic(String productName, String characteristicName) {
         Optional<Characteristic> optionalCharacteristic = characteristicRepo.findByName(characteristicName);
         if (!optionalCharacteristic.isPresent()) {
-            return ResponseEntity.badRequest()
-                    .body(new MessageResponse("characteristic with name " + characteristicName + " is not presented"));
+            throw new NoSuchElementException("Characteristic with name " + characteristicName + " is not presented");
         }
         Characteristic characteristicToDelete = optionalCharacteristic.get();
 
@@ -220,7 +216,7 @@ public class StockService {
     // ====================== Comment management =========================
     public ResponseEntity<?> postComment(CommentRequest commentRequest,
                                          String productName,
-                                         MultipartFile[] files) {
+                                         MultipartFile[] files) throws IllegalFormatException, FileUploadException {
 
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         Comment comment = new Comment(
@@ -241,30 +237,22 @@ public class StockService {
 
         // Сохранение файлов в бд
         if (files[0].getContentType() != null) {
-            if (files.length <= 10) {
-
-                if (!fileStorageService.checkImages(files)) {
-                    return ResponseEntity
-                            .badRequest()
-                            .body(new MessageResponse("Error: Wrong format of images."));
-                }
-                List<FileDB> filesDB;
-                try {
-                    filesDB = fileStorageService.saveFilesDB(files);
-                } catch (Exception e) {
-                    return ResponseEntity
-                            .badRequest()
-                            .body(new MessageResponse("Error: Fail to upload files :" + e.getMessage()));
-                }
-                // Задание списка пользовательских фотографий комментарию
-                List<ResponseFile> commentFiles = new ArrayList<>();
-                filesDB.forEach(file -> commentFiles.add(fileStorageService.saveResponsefile(file)));
-                comment.setImages(commentFiles);
-            } else {
-                return ResponseEntity
-                        .badRequest()
-                        .body(new MessageResponse("Error: Too many files to upload."));
+            if (files.length > 10) {
+                throw new FileUploadException("Error: Too many files to upload.");
             }
+            if (!fileStorageService.checkImages(files)) {
+                throw new IllegalFormatException("Error: Wrong format of images.");
+            }
+            List<FileDB> filesDB;
+            try {
+                filesDB = fileStorageService.saveFilesDB(files);
+            } catch (Exception e) {
+                throw new FileUploadException("Error: Fail to upload files :" + e.getMessage());
+            }
+            // Задание списка пользовательских фотографий комментарию
+            List<ResponseFile> commentFiles = new ArrayList<>();
+            filesDB.forEach(file -> commentFiles.add(fileStorageService.saveResponsefile(file)));
+            comment.setImages(commentFiles);
         }
 
         comments.add(comment);
@@ -277,9 +265,9 @@ public class StockService {
 
     public ResponseEntity<?> getFile(String id) {
         FileDB fileDB = fileStorageService.getFile(id);
-        if (fileDB == null) return ResponseEntity
-                .badRequest()
-                .body(new MessageResponse("File with id " + id + " is not presented"));
+        if (fileDB == null){
+            throw new NoSuchElementException("File with id " + id + " is not presented");
+        }
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + fileDB.getName() + "\"")
@@ -290,18 +278,13 @@ public class StockService {
         Optional<Comment> comment = commentRepo.findById(commentId);
         if (!comment.isPresent()) {
             log.error("Comment with id " + commentId + " is not presented");
-            return null;
+            throw new NoSuchElementException("Comment with id " + commentId + " is not presented");
         }
         return comment.get();
     }
 
-    public ResponseEntity<?> deleteComment(Long commentId, String productName) {
+    public ResponseEntity<?> deleteComment(Long commentId, String productName) throws AccessException {
         Comment repoComment = getCommentById(commentId);
-        if (repoComment == null) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Comment with id " + commentId + " is not presented"));
-        }
 
         if (SecurityContextHolder.getContext().getAuthentication()
                 .getAuthorities()
@@ -311,9 +294,7 @@ public class StockService {
             String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
             if (!repoComment.getUserEmail().equals(userEmail)) {
-                return ResponseEntity
-                        .badRequest()
-                        .body(new MessageResponse("Access denied: To delete the comment, you need to be under your account"));
+                throw new AccessException("Access denied: To delete the comment, you need to be under your account");
             }
         }
 
@@ -321,9 +302,7 @@ public class StockService {
         List<Comment> comments = product.getComments();
         if (!comments.contains(repoComment)) {
             log.error("Comment is not presented in product: " + productName);
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Comment is not presented in product: " + productName));
+            throw new NoSuchElementException("Comment is not presented in product: " + productName);
         }
 
         comments.remove(repoComment);
@@ -519,8 +498,8 @@ public class StockService {
     }
 
     @Transactional
-    public Product saveProduct(Product product) {
-        return productRepo.save(product);
+    public void saveProduct(Product product) {
+        productRepo.save(product);
     }
 
     @Transactional
