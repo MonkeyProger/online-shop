@@ -2,8 +2,11 @@ package org.scenter.onlineshop.controllers;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.FileUploadException;
+import org.scenter.onlineshop.exception.IllegalFormatException;
 import org.scenter.onlineshop.requests.CommentRequest;
 import org.scenter.onlineshop.services.StockService;
+import org.springframework.expression.AccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -24,14 +27,14 @@ public class StockController {
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<?> postComment(@PathVariable String product,
                                          @Valid @RequestPart CommentRequest commentRequest,
-                                         @RequestPart MultipartFile[] files) {
+                                         @RequestPart MultipartFile[] files) throws IllegalFormatException, FileUploadException {
         return stockService.postComment(commentRequest, product, files);
     }
 
     @DeleteMapping("/{product}/deleteComment")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<?> deleteComment(@PathVariable String product,
-                                           @Valid @RequestBody CommentRequest commentRequest) {
+                                           @Valid @RequestBody CommentRequest commentRequest) throws AccessException {
 
         return stockService.deleteComment(commentRequest.getCommentId(), product);
     }

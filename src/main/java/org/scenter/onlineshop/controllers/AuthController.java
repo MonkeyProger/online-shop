@@ -3,6 +3,7 @@ package org.scenter.onlineshop.controllers;
 import lombok.RequiredArgsConstructor;
 import org.scenter.onlineshop.domain.AppUser;
 import org.scenter.onlineshop.domain.ERole;
+import org.scenter.onlineshop.exception.ElementIsPresentedException;
 import org.scenter.onlineshop.repo.UserRepo;
 import org.scenter.onlineshop.requests.AdminSignupRequest;
 import org.scenter.onlineshop.requests.LoginRequest;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -61,11 +63,10 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
+    public ResponseEntity<?> registerUser(
+            @Valid @RequestBody SignupRequest signUpRequest) throws ElementIsPresentedException {
         if (userRepo.existsByEmail(signUpRequest.getEmail())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Email is already in use!"));
+            throw new ElementIsPresentedException("Error: Email is already in use!");
         }
 
         ERole role;
@@ -104,9 +105,7 @@ public class AuthController {
     public ResponseEntity<?> updateUser(@Valid AdminSignupRequest signUpRequest, Long id) {
         Optional<AppUser> user = userRepo.findById(id);
         if (!user.isPresent()) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("User with id " + id + " is not presented in database"));
+            throw new NoSuchElementException("User with id " + id + " is not presented in database");
         }
 
         AppUser updatedUser = user.get();

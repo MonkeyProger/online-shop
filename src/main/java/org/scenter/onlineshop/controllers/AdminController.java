@@ -1,10 +1,14 @@
 package org.scenter.onlineshop.controllers;
 
 import lombok.AllArgsConstructor;
+import org.apache.tomcat.util.http.fileupload.FileUploadException;
+import org.scenter.onlineshop.exception.ElementIsPresentedException;
+import org.scenter.onlineshop.exception.IllegalFormatException;
 import org.scenter.onlineshop.requests.*;
 import org.scenter.onlineshop.services.ShopService;
 import org.scenter.onlineshop.services.StockService;
 import org.scenter.onlineshop.services.UserDetailsServiceImpl;
+import org.springframework.expression.AccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +35,7 @@ public class AdminController {
     }
 
     @PostMapping("/addUser")
-    public ResponseEntity<?> addUser(@Valid @RequestBody AdminSignupRequest adminSignupRequest) {
+    public ResponseEntity<?> addUser(@Valid @RequestBody AdminSignupRequest adminSignupRequest) throws ElementIsPresentedException {
         return authController.registerUser(adminSignupRequest);
     }
 
@@ -50,7 +54,7 @@ public class AdminController {
 
     @DeleteMapping("/deleteComment/{product}")
     public ResponseEntity<?> forceDeleteComment(@PathVariable String product,
-                                                @Valid @RequestBody CommentRequest commentRequest) {
+                                                @Valid @RequestBody CommentRequest commentRequest) throws AccessException {
         return stockService.deleteComment(commentRequest.getCommentId(), product);
     }
 
@@ -73,7 +77,7 @@ public class AdminController {
 
     @PostMapping("/placeProduct")
     public ResponseEntity<?> placeProduct(@Valid @RequestPart PlaceProductRequest placeProductRequest,
-                                          @RequestPart MultipartFile[] files) {
+                                          @RequestPart MultipartFile[] files) throws IllegalFormatException,FileUploadException {
         return stockService.placeProduct(placeProductRequest, files);
     }
 
@@ -159,7 +163,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/deleteOrder")
-    public ResponseEntity<?> deleteOrder(@Valid @RequestBody CloseOrderRequest closeOrderRequest) {
+    public ResponseEntity<?> deleteOrder(@Valid @RequestBody CloseOrderRequest closeOrderRequest) throws AccessException {
         return ResponseEntity.ok().body(shopService.closeOrder(closeOrderRequest));
     }
 }

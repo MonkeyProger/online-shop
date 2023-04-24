@@ -33,7 +33,7 @@ public class FileStorageService {
 
     protected boolean checkImages(MultipartFile[] files){
         for (MultipartFile file : files) {
-            if (Arrays.stream(imageTypes).noneMatch(file.getContentType()::contains)) {
+            if (file.getContentType() == null || Arrays.stream(imageTypes).noneMatch(file.getContentType()::contains)) {
                 return false;
             }
         }

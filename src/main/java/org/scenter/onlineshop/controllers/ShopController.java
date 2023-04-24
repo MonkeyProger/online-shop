@@ -4,8 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scenter.onlineshop.requests.CloseOrderRequest;
 import org.scenter.onlineshop.requests.PlaceOrderRequest;
-import org.scenter.onlineshop.responses.MessageResponse;
 import org.scenter.onlineshop.services.ShopService;
+import org.springframework.expression.AccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,26 +23,22 @@ public class ShopController {
     }
 
     @DeleteMapping("/closeOrder")
-    public ResponseEntity<?> closeOrder(@Valid @RequestBody CloseOrderRequest closeOrderRequest) {
+    public ResponseEntity<?> closeOrder(@Valid @RequestBody CloseOrderRequest closeOrderRequest) throws AccessException {
         return shopService.closeOrder(closeOrderRequest);
     }
 
     @GetMapping("/getUserActiveOrders/{userEmail}")
-    public ResponseEntity<?> getUserActiveOrders(@PathVariable String userEmail) {
+    public ResponseEntity<?> getUserActiveOrders(@PathVariable String userEmail) throws AccessException {
         if (!shopService.isAuthorized(userEmail)) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Access denied: Not enough rights for this action!"));
+            throw new AccessException("Access denied: Not enough rights for this action!");
         }
         return ResponseEntity.ok(shopService.getActiveUserOrders(userEmail));
     }
 
     @GetMapping("/getUserClosedOrders/{userEmail}")
-    public ResponseEntity<?> getUserClosedOrders(@PathVariable String userEmail){
+    public ResponseEntity<?> getUserClosedOrders(@PathVariable String userEmail) throws AccessException {
         if (!shopService.isAuthorized(userEmail)) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Access denied: Not enough rights for this action!"));
+            throw new AccessException("Access denied: Not enough rights for this action!");
         }
         return ResponseEntity.ok(shopService.getClosedUserOrders(userEmail));
     }
