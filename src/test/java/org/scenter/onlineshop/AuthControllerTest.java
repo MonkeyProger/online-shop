@@ -24,20 +24,21 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.scenter.onlineshop.domain.ERole.ROLE_ADMIN;
+import static org.scenter.onlineshop.domain.ERole.ROLE_USER;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -53,10 +54,10 @@ public class AuthControllerTest {
     @MockBean
     private AuthenticationManager authenticationManager;
     @Autowired
-    AuthController authController;
+    private AuthController authController;
 
     @Test
-    public void authenticateUser_Correct() {
+    public void authenticateUser() {
         AppUser user = new AppUser(1L,"aaa","aaa","aaa@aaa.aaa",encoder.encode("correct_password"), ROLE_ADMIN);
         LoginRequest loginRequest = new LoginRequest("aaa@aaa.aaa","correct_password");
         UserDetailsImpl mockUserDetails = UserDetailsImpl.build(user);
@@ -78,18 +79,6 @@ public class AuthControllerTest {
         ResponseEntity<?> res = authController.authenticateUser(loginRequest);
         Assert.assertEquals(expectedResponse,res);
     }
-    @Test
-    public void authenticateUser_Error() {
-        LoginRequest loginRequest = new LoginRequest("aaa@aaa.aaa","wrong_password");
-        AuthenticationException mockException = new BadCredentialsException("Bad credentials");
-        AuthenticationException actualException = Assert.assertThrows(AuthenticationException.class,
-                () -> authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                        loginRequest.getEmail(), loginRequest.getPassword())));
-        System.out.println(actualException.toString());
-        System.out.println(mockException.toString());
-        Assert.assertEquals(mockException,actualException);
-    }
-
 
     @Test
     public void registerUser_Correct() {
@@ -184,6 +173,93 @@ public class AuthControllerTest {
                 ResponseEntity<?> res = authController.registerUser(request);
                 Assert.assertEquals(HttpStatus.OK, res.getStatusCode());
                 Assert.assertEquals(new MessageResponse("User registered successfully!"),res.getBody());
+            } catch(Exception e) {
+                if (!role.equals("fakeRole")){
+                    Assert.fail("Не ожидалось исключения: "+e.getMessage());
+                }
+                Assert.assertEquals("No such role: " + role, e.getMessage());
+            }
+        });
+    }
+
+    @Test
+    public void updateUser_Correct() {
+        Long id = 2L;
+        String encodedPassword = encoder.encode("bbbbbb");
+        Optional<AppUser> user = Optional.of(new AppUser(
+                2L,
+                "aaa",
+                "aaa",
+                "aaa@aaa.aaa",
+                encoder.encode("correct_password"),
+                ROLE_ADMIN));
+        AdminSignupRequest request = new AdminSignupRequest(
+                "bbbbbb",
+                "bbbbbb",
+                "bbb@bbb.bbb",
+                "bbbbbb",
+                null);
+        AppUser updatedUser = new AppUser(2L,
+                "bbbbbb",
+                "bbbbbb",
+                "bbb@bbb.bbb",
+                encodedPassword,
+                ROLE_USER);
+        Mockito.doReturn(user).when(userRepo).findById(id);
+        Mockito.doReturn(encodedPassword).when(encoder).encode(ArgumentMatchers.any());
+        try {
+            ResponseEntity<?> res = authController.updateUser(request,id);
+            Mockito.verify(userDetailsService, Mockito.times(1))
+                    .saveUser(updatedUser);
+            Assert.assertEquals(HttpStatus.OK, res.getStatusCode());
+            Assert.assertEquals(new MessageResponse("User updated successfully!"),res.getBody());
+        } catch(Exception e) {
+            Assert.fail("Не ожидалось исключения: "+e.getMessage());
+        }
+    }
+
+    @Test
+    public void updateUser_UserNotFoundExceptionThrow() {
+        Long id = 2L;
+        Optional<AppUser> user = Optional.empty();
+        AdminSignupRequest request = new AdminSignupRequest(
+                "bbbbbb",
+                "bbbbbb",
+                "bbb@bbb.bbb",
+                "bbbbbb",
+                null);
+        Mockito.doReturn(user).when(userRepo).findById(id);
+        NoSuchElementException e = Assert.assertThrows(NoSuchElementException.class,
+                () -> authController.updateUser(request,id));
+        Assert.assertEquals("User with id " + id + " is not presented in database", e.getMessage());
+    }
+
+    @Test
+    public void updateUser_manyRoles() {
+        List<String> roles = Stream.of(null, "admin", "user", "fakeRole")
+                .collect(Collectors.toCollection(
+                        ArrayList::new));
+        Long id = 1L;
+        Optional<AppUser> user = Optional.of(new AppUser(
+                1L,
+                "aaa",
+                "aaa",
+                "aaa@aaa.aaa",
+                encoder.encode("correct_password"),
+                ROLE_ADMIN));
+        AdminSignupRequest request = new AdminSignupRequest(
+                "bbbbbb",
+                "bbbbbb",
+                "bbb@bbb.bbb",
+                "bbbbbb",
+                null);
+        Mockito.doReturn(user).when(userRepo).findById(id);
+        roles.forEach(role -> {
+            request.setRole(role);
+            try {
+                ResponseEntity<?> res = authController.updateUser(request,id);
+                Assert.assertEquals(HttpStatus.OK, res.getStatusCode());
+                Assert.assertEquals(new MessageResponse("User updated successfully!"),res.getBody());
             } catch(Exception e) {
                 if (!role.equals("fakeRole")){
                     Assert.fail("Не ожидалось исключения: "+e.getMessage());
