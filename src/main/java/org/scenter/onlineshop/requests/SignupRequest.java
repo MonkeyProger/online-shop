@@ -1,12 +1,16 @@
 package org.scenter.onlineshop.requests;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class SignupRequest {
     @NotBlank
     @Size(min = 1, max = 20)

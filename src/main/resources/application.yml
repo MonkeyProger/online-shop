@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5432/online-shop
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://localhost:5332/postgres
+    username: makar
+    password: password
   jpa:
     hibernate:
       ddl-auto: create
@@ -17,8 +17,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: email
-    password: pwd
+    username: makarjohny@gmail.com
+    password: jyhyvcbjdpovcnsx
     properties:
       mail:
         smtp:

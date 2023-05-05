@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,12 +41,11 @@ public class AuthController {
     private final PasswordEncoder encoder;
     private final JWTUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
-
     @PostMapping("/signin")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> authenticateUser(
+            @Valid @RequestBody LoginRequest loginRequest) throws AuthenticationException {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
-
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
 
@@ -56,7 +56,7 @@ public class AuthController {
 
         return ResponseEntity.ok(new JWTResponse(jwt,
                 userDetails.getId(),
-                userDetails.getUsername(),
+                userDetails.getName(),
                 userDetails.getSurname(),
                 userDetails.getEmail(),
                 roles));
@@ -88,7 +88,7 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
 
-    private ERole getERole(String role) {
+    private ERole getERole(String role) throws NoSuchElementException{
         if (role == null) {
             return ERole.ROLE_USER;
         }
@@ -98,11 +98,12 @@ public class AuthController {
             case "user":
                 return ERole.ROLE_USER;
             default:
-                throw new EnumConstantNotPresentException(ERole.class, "No such role: " + role);
+                throw new NoSuchElementException("No such role: " + role);
         }
     }
 
-    public ResponseEntity<?> updateUser(@Valid AdminSignupRequest signUpRequest, Long id) {
+    public ResponseEntity<?> updateUser(@Valid AdminSignupRequest signUpRequest, Long id)
+            throws NoSuchElementException{
         Optional<AppUser> user = userRepo.findById(id);
         if (!user.isPresent()) {
             throw new NoSuchElementException("User with id " + id + " is not presented in database");
