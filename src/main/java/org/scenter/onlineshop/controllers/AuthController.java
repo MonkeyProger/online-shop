@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class AuthController {
+
     private final UserRepo userRepo;
     private final UserDetailsServiceImpl userDetailsService;
     private final PasswordEncoder encoder;

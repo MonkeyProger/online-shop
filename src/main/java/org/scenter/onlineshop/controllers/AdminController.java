@@ -99,6 +99,11 @@ public class AdminController {
         return stockService.setCharacteristic(productName, charactRequest);
     }
 
+    @PostMapping("/allCharacteristics")
+    public ResponseEntity<?> setCharacteristic() {
+        return ResponseEntity.ok().body(stockService.getAllCharacteristic());
+    }
+
     @PostMapping("/deleteCharact/{productName}")
     public ResponseEntity<?> deleteCharacteristic(@PathVariable String productName,
                                                   @Valid @RequestBody CharacteristicRequest charactRequest) {

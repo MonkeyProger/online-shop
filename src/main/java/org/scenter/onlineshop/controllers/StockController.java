@@ -1,11 +1,12 @@
 package org.scenter.onlineshop.controllers;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.scenter.onlineshop.exception.IllegalFormatException;
 import org.scenter.onlineshop.requests.CommentRequest;
 import org.scenter.onlineshop.services.StockService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.expression.AccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,9 +18,10 @@ import javax.validation.Valid;
 @RestController
 @Slf4j
 @RequestMapping("/api/stock")
-@AllArgsConstructor
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class StockController {
-    private StockService stockService;
+
+    private final StockService stockService;
 
     // ====================== Comment management =========================
 

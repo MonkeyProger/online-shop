@@ -136,6 +136,10 @@ public class StockService {
     }
 
     // ===================== Characteristic management ===================
+    public List<Characteristic> getAllCharacteristic() {
+        return characteristicRepo.findAll();
+    }
+
     private void setCharacteristic(Product product, Characteristic characteristic) {
         Set<Characteristic> productCharacteristic = product.getCharacteristics();
         productCharacteristic.add(characteristic);

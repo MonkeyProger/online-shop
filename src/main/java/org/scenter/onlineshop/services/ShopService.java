@@ -1,6 +1,6 @@
 package org.scenter.onlineshop.services;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scenter.onlineshop.domain.AppUser;
 import org.scenter.onlineshop.domain.Ordering;
@@ -13,6 +13,7 @@ import org.scenter.onlineshop.requests.CloseOrderRequest;
 import org.scenter.onlineshop.requests.PlaceOrderRequest;
 import org.scenter.onlineshop.responses.MessageResponse;
 import org.scenter.onlineshop.responses.OrderResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.expression.AccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,14 +25,14 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ShopService {
 
-    private UserRepo userRepo;
-    private OrderingRepo orderingRepo;
-    private SaleProductRepo saleProductRepo;
-    private StockService stockService;
-    private EmailService emailService;
+    private final UserRepo userRepo;
+    private final OrderingRepo orderingRepo;
+    private final SaleProductRepo saleProductRepo;
+    private final StockService stockService;
+    private final EmailService emailService;
 
     private Set<Product> isCartInStock(Set<SaleProduct> productSet){
         Set<Product> notAvailableProducts = new HashSet<>();

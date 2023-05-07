@@ -1,10 +1,11 @@
 package org.scenter.onlineshop.controllers;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.scenter.onlineshop.requests.CloseOrderRequest;
 import org.scenter.onlineshop.requests.PlaceOrderRequest;
 import org.scenter.onlineshop.services.ShopService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.expression.AccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +15,11 @@ import javax.validation.Valid;
 @RestController
 @Slf4j
 @RequestMapping("/api/cart")
-@AllArgsConstructor
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ShopController {
-    private ShopService shopService;
+
+    private final ShopService shopService;
+
     @PostMapping("/placeOrder")
     public ResponseEntity<?> placeOrder(@Valid @RequestBody PlaceOrderRequest placeOrderRequest) {
         return shopService.placeOrder(placeOrderRequest);
