@@ -46,12 +46,12 @@ public class StockService {
             log.error("Product with id " + productId + "not found");
             throw new NoSuchElementException("Product with id " + productId + "not found");
         }
-        log.info("Product '{}' found in the database", product.get().getName());
+        log.info("Product '{}' found in the database", product.get().getDescription());
         return product.get();
     }
 
     public Product getProductByName(String productName) {
-        Optional<Product> product = productRepo.findByName(productName);
+        Optional<Product> product = productRepo.findByTitle(productName);
         if (!product.isPresent()) {
             log.error("Product with name " + productName + " not found");
             throw new NoSuchElementException("Product with name " + productName + "not found");
@@ -70,6 +70,7 @@ public class StockService {
                 placeProductRequest.getPrice(),
                 placeProductRequest.getSalePrice(),
                 placeProductRequest.getAmount(),
+                null,
                 null,
                 null);
         product = addPhotosToProduct(product, files);
@@ -109,7 +110,7 @@ public class StockService {
             deleteComments(comments);
         }
         product.setAmount(placeProductRequest.getAmount());
-        product.setName(placeProductRequest.getName());
+        product.setDescription(placeProductRequest.getName());
         product.setPrice(placeProductRequest.getPrice());
         product.setTitle(placeProductRequest.getTitle());
         product.setSalePrice(placeProductRequest.getSalePrice());
@@ -132,7 +133,7 @@ public class StockService {
         }
         removeProduct(product);
         deleteComments(productComments);
-        return ResponseEntity.ok(new MessageResponse("Product: " + product.getName() + " deleted successfully"));
+        return ResponseEntity.ok(new MessageResponse("Product: " + product.getDescription() + " deleted successfully"));
     }
 
     // ===================== Characteristic management ===================
@@ -162,14 +163,14 @@ public class StockService {
         setCharacteristic(product, characteristic);
 
         return ResponseEntity.ok(new MessageResponse("Characteristic " + characteristic.getName() + " = " +
-                characteristicValue.getValue() + " added to product " + product.getName() + " successfully"));
+                characteristicValue.getValue() + " added to product " + product.getDescription() + " successfully"));
     }
 
     private ResponseEntity<?> deleteCharacteristic(Product product, Characteristic characteristic) {
         Set<Characteristic> productCharacteristics = product.getCharacteristics();
         if (!productCharacteristics.contains(characteristic)) {
-            log.error("Characteristic is not presented in product: " + product.getName());
-            throw new NoSuchElementException("Characteristic is not presented in product: " + product.getName());
+            log.error("Characteristic is not presented in product: " + product.getDescription());
+            throw new NoSuchElementException("Characteristic is not presented in product: " + product.getDescription());
         }
 
         productCharacteristics.remove(characteristic);
@@ -379,14 +380,22 @@ public class StockService {
     public void saveProductToCategory(String productName, String categoryName) {
         Category category = getCategoryByName(categoryName);
         Product product = getProductByName(productName);
+        Set<Category> oldCategories = product.getCategories();
         List<Product> oldProducts = category.getProducts();
         if (oldProducts.contains(product)) {
             log.error("Product '{}' is already in category '{}'", productName, categoryName);
             throw new IllegalArgumentException("Product is already in category");
         }
+        if (oldCategories.contains(category)) {
+            log.error("Category '{}' is already in product '{}'", categoryName, productName);
+            throw new IllegalArgumentException("Category is already in Product");
+        }
+        oldCategories.add(category);
         oldProducts.add(product);
         category.setProducts(oldProducts);
+        product.setCategories(oldCategories);
         saveCategory(category);
+        saveProduct(product);
     }
 
     public Category saveProductToCategory(Long productId, Long categoryId) {

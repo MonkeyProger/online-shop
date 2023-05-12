@@ -86,7 +86,7 @@ public class ShopService {
                     .badRequest()
                     .body(new MessageResponse(("The number of products in the cart exceeds the " +
                             "available in the shop:\n" + rejectedProducts.stream().map(product ->
-                            "'"+product.getName()+"' - available amount: "+product.getAmount()+";")
+                            "'"+product.getDescription()+"' - available amount: "+product.getAmount()+";")
                             .collect(Collectors.joining("\n")))));
 
         }

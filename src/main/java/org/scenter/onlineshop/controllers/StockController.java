@@ -3,7 +3,10 @@ package org.scenter.onlineshop.controllers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
+import org.scenter.onlineshop.domain.Product;
+import org.scenter.onlineshop.domain.dto.ProductDTO;
 import org.scenter.onlineshop.exception.IllegalFormatException;
+import org.scenter.onlineshop.mapping.ProductMapping;
 import org.scenter.onlineshop.requests.CommentRequest;
 import org.scenter.onlineshop.services.StockService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
@@ -54,12 +59,16 @@ public class StockController {
     // ====================== Products/Categories management =========================
     @GetMapping("/allProducts")
     public ResponseEntity<?> getAllProducts() {
-        return ResponseEntity.ok().body(stockService.getAllProducts());
+        List<Product> products = stockService.getAllProducts();
+        List<ProductDTO> productDTO = products.stream().map(ProductMapping::convertProductToDTO).collect(Collectors.toList());
+        return ResponseEntity.ok().body(productDTO);
     }
 
     @GetMapping("/{category}/products")
     public ResponseEntity<?> getProductsByCategory(@PathVariable String category) {
-        return ResponseEntity.ok().body(stockService.getProductsByCategory(category));
+        List<Product> products = stockService.getProductsByCategory(category);
+        List<ProductDTO> productDTO = products.stream().map(ProductMapping::convertProductToDTO).collect(Collectors.toList());
+        return ResponseEntity.ok().body(productDTO);
     }
 
     @GetMapping("/allCategories")

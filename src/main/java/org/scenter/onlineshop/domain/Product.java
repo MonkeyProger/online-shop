@@ -24,9 +24,9 @@ public class Product {
     @GeneratedValue(strategy = AUTO)
     private Long id;
 
-    private String name;
-
     private String title;
+
+    private String description;
 
     @OneToMany
     @LazyCollection(LazyCollectionOption.FALSE)
@@ -37,6 +37,10 @@ public class Product {
     private Float salePrice;
 
     private Integer amount;
+
+    @ManyToMany
+    @LazyCollection(LazyCollectionOption.FALSE)
+    private Set<Category> categories;
 
     @ManyToMany
     @LazyCollection(LazyCollectionOption.FALSE)

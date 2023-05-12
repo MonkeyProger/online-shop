@@ -63,7 +63,7 @@ public class EmailService {
         for (int i = 0; i < products.size(); i++){
             Map<String, Object> params = new HashMap<>();
             Product product = products.get(i);
-            params.put("product", product.getName());
+            params.put("product", product.getDescription());
             params.put("quantity", quantities.get(i));
             params.put("price",product.getPrice());
             res.append("Good №").append(i+1).append(StrSubstitutor.replace(template, params, "${", "}"));
