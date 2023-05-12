@@ -42,6 +42,10 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             log.error("Cannot set user authentication: {}", e);
         }
 
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+        response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+
         filterChain.doFilter(request, response);
     }
 

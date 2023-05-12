@@ -16,6 +16,7 @@ import javax.validation.Valid;
 @Slf4j
 @RequestMapping("/api/cart")
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class ShopController {
 
     private final ShopService shopService;

@@ -19,6 +19,7 @@ import javax.validation.Valid;
 @Slf4j
 @RequestMapping("/api/stock")
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class StockController {
 
     private final StockService stockService;
@@ -64,5 +65,10 @@ public class StockController {
     @GetMapping("/allCategories")
     public ResponseEntity<?> getAllCategories() {
         return ResponseEntity.ok().body(stockService.getAllCategories());
+    }
+
+    @GetMapping("/allCharacteristics")
+    public ResponseEntity<?> setCharacteristic() {
+        return ResponseEntity.ok().body(stockService.getAllCharacteristic());
     }
 }
