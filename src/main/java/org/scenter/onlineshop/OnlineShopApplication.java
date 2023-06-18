@@ -2,6 +2,7 @@ package org.scenter.onlineshop;
 
 
 import org.scenter.onlineshop.domain.AppUser;
+import org.scenter.onlineshop.domain.Category;
 import org.scenter.onlineshop.domain.Product;
 import org.scenter.onlineshop.service.services.StockService;
 import org.scenter.onlineshop.service.services.UserDetailsServiceImpl;

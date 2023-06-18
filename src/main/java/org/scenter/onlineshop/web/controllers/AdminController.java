@@ -5,7 +5,6 @@ import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.scenter.onlineshop.common.requests.*;
 import org.scenter.onlineshop.common.exception.ElementIsPresentedException;
 import org.scenter.onlineshop.common.exception.IllegalFormatException;
-import org.scenter.onlineshop.requests.*;
 import org.scenter.onlineshop.service.services.ShopService;
 import org.scenter.onlineshop.service.services.StockService;
 import org.scenter.onlineshop.service.services.UserDetailsServiceImpl;
