@@ -1,7 +1,7 @@
 package org.scenter.onlineshop.security;
 
 import lombok.RequiredArgsConstructor;
-import org.scenter.onlineshop.services.UserDetailsServiceImpl;
+import org.scenter.onlineshop.service.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

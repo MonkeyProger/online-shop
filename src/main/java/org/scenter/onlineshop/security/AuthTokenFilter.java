@@ -1,7 +1,7 @@
 package org.scenter.onlineshop.security;
 
 import lombok.extern.slf4j.Slf4j;
-import org.scenter.onlineshop.services.UserDetailsServiceImpl;
+import org.scenter.onlineshop.service.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;

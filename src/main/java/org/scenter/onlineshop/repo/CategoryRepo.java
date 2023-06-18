@@ -1,6 +1,5 @@
 package org.scenter.onlineshop.repo;
 
-import org.scenter.onlineshop.domain.Category;
 import org.scenter.onlineshop.domain.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 

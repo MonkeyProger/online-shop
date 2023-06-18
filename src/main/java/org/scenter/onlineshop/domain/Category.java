@@ -19,16 +19,13 @@ import static javax.persistence.GenerationType.AUTO;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Category {
-
     @Id @GeneratedValue(strategy = AUTO)
     private Long id;
-
     private String name;
-
     private String title;
-
     private Long parentId;
-
     @ManyToMany(fetch = EAGER)
     private List<Product> products = new ArrayList<>();
 }
+
+

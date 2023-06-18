@@ -2,10 +2,9 @@ package org.scenter.onlineshop;
 
 
 import org.scenter.onlineshop.domain.AppUser;
-import org.scenter.onlineshop.domain.Category;
 import org.scenter.onlineshop.domain.Product;
-import org.scenter.onlineshop.services.StockService;
-import org.scenter.onlineshop.services.UserDetailsServiceImpl;
+import org.scenter.onlineshop.service.services.StockService;
+import org.scenter.onlineshop.service.services.UserDetailsServiceImpl;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
