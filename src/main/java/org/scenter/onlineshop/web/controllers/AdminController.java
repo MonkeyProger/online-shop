@@ -130,7 +130,12 @@ public class AdminController {
 
     @PostMapping("/linkProduct/{productId}/to/{categoryId}")
     public ResponseEntity<?> linkProductToCategory(@PathVariable Long productId, @PathVariable Long categoryId) {
-        return ResponseEntity.ok().body(stockService.saveProductToCategory(productId, categoryId));
+        return ResponseEntity.ok().body(stockService.saveProductToCategoryByIds(productId, categoryId));
+    }
+
+    @PostMapping("/unlinkProduct/{productId}/from/{categoryId}")
+    public ResponseEntity<?> unlinkProductFromCategory(@PathVariable Long productId, @PathVariable Long categoryId) {
+        return ResponseEntity.ok().body(stockService.deleteProductFromCategoryByIds(productId, categoryId));
     }
     //  ===================================        Files management         ============================================
 

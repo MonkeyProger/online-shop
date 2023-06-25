@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+    <head>
+        <title>Order confirmation</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    </head>
+<body>
+    <p>Dear customer,</p>
+    <p>
+        We’re happy to let you know that we’ve received your order.<br />
+        Order details can be found below.
+    </p>
+    <p>
+        <b>Description:</b><br />
+        <span th:text="${description}"></span><br />
+        <b>Total order price:</b> <span th:text="${total}"></span>
+    </p>
+
+    <p>
+        Workshop Team <br />
+        <em>This is an automated message, please do not reply.</em>
+    </p>
+</body>
+</html>

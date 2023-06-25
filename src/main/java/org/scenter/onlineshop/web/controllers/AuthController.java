@@ -1,13 +1,10 @@
 package org.scenter.onlineshop.web.controllers;
 
 import lombok.RequiredArgsConstructor;
-import org.scenter.onlineshop.domain.AppUser;
-import org.scenter.onlineshop.domain.ERole;
 import org.scenter.onlineshop.common.exception.ElementIsPresentedException;
-import org.scenter.onlineshop.repo.UserRepo;
-import org.scenter.onlineshop.common.requests.AdminSignupRequest;
 import org.scenter.onlineshop.common.requests.LoginRequest;
 import org.scenter.onlineshop.common.requests.SignupRequest;
+import org.scenter.onlineshop.common.requests.AdminSignupRequest;
 import org.scenter.onlineshop.common.responses.JWTResponse;
 import org.scenter.onlineshop.common.responses.MessageResponse;
 import org.scenter.onlineshop.security.JWTUtils;
@@ -26,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -36,7 +32,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class AuthController {
 
-    private final UserRepo userRepo;
     private final UserDetailsServiceImpl userDetailsService;
     private final PasswordEncoder encoder;
     private final JWTUtils jwtUtils;
@@ -64,59 +59,16 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(
             @Valid @RequestBody SignupRequest signUpRequest) throws ElementIsPresentedException {
-        if (userRepo.existsByEmail(signUpRequest.getEmail())) {
-            throw new ElementIsPresentedException("Error: Email is already in use!");
-        }
-
-        ERole role;
-        if (signUpRequest instanceof AdminSignupRequest) {
-            role = getERole(((AdminSignupRequest) signUpRequest).getRole());
-        } else {
-            role = ERole.ROLE_USER;
-        }
-
-        AppUser user = new AppUser(
-                signUpRequest.getName(),
-                signUpRequest.getSurname(),
-                signUpRequest.getEmail(),
-                encoder.encode(signUpRequest.getPassword()),
-                role);
-
-        userDetailsService.saveUser(user);
+        signUpRequest.setPassword(encoder.encode(signUpRequest.getPassword()));
+        userDetailsService.registerUser(signUpRequest);
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
 
-    private ERole getERole(String role) throws NoSuchElementException{
-        if (role == null) {
-            return ERole.ROLE_USER;
-        }
-        switch (role) {
-            case "admin":
-                return ERole.ROLE_ADMIN;
-            case "user":
-                return ERole.ROLE_USER;
-            default:
-                throw new NoSuchElementException("No such role: " + role);
-        }
-    }
-
     public ResponseEntity<?> updateUser(@Valid AdminSignupRequest signUpRequest, Long id)
             throws NoSuchElementException{
-        Optional<AppUser> user = userRepo.findById(id);
-        if (!user.isPresent()) {
-            throw new NoSuchElementException("User with id " + id + " is not presented in database");
-        }
-
-        AppUser updatedUser = user.get();
-        ERole role = getERole(signUpRequest.getRole());
-        updatedUser.setRole(role);
-        updatedUser.setName(signUpRequest.getName());
-        updatedUser.setSurname(signUpRequest.getSurname());
-        updatedUser.setEmail(signUpRequest.getEmail());
-        updatedUser.setPassword(encoder.encode(signUpRequest.getPassword()));
-
-        userDetailsService.saveUser(updatedUser);
+        signUpRequest.setPassword(encoder.encode(signUpRequest.getPassword()));
+        userDetailsService.updateUser(signUpRequest, id);
 
         return ResponseEntity.ok(new MessageResponse("User updated successfully!"));
     }

@@ -8,7 +8,6 @@ import org.scenter.onlineshop.domain.Product;
 import org.scenter.onlineshop.domain.SaleProduct;
 import org.scenter.onlineshop.repo.OrderingRepo;
 import org.scenter.onlineshop.repo.SaleProductRepo;
-import org.scenter.onlineshop.repo.UserRepo;
 import org.scenter.onlineshop.common.requests.CloseOrderRequest;
 import org.scenter.onlineshop.common.requests.PlaceOrderRequest;
 import org.scenter.onlineshop.common.responses.MessageResponse;
@@ -19,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import javax.mail.MessagingException;
 import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ShopService {
 
-    private final UserRepo userRepo;
+    private final UserDetailsServiceImpl userDetailsService;
     private final OrderingRepo orderingRepo;
     private final SaleProductRepo saleProductRepo;
     private final StockService stockService;
@@ -67,16 +67,13 @@ public class ShopService {
         return ordering.get();
     }
 
-    public ResponseEntity<?> placeOrder(PlaceOrderRequest placeOrderRequest) {
+    public ResponseEntity<?> placeOrder(PlaceOrderRequest placeOrderRequest) throws MessagingException {
         if (!isAuthorized(placeOrderRequest.getEmail())){
             return ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Access denied: Not enough rights for this action!"));
         }
-        Optional<AppUser> user = userRepo.findByEmail(placeOrderRequest.getEmail());
-        if (!user.isPresent()) {
-            throw new NoSuchElementException("Error: Email is not presented!");
-        }
+        AppUser user = userDetailsService.getUserByEmail(placeOrderRequest.getEmail());
         Set<SaleProduct> cart = placeOrderRequest.getOrder();
         float cartCost = placeOrderRequest.getTotal();
         Set<Product> rejectedProducts = isCartInStock(cart);
@@ -91,9 +88,9 @@ public class ShopService {
 
         }
         Set<SaleProduct> updatedCart = saveSaleProducts(cart);
-        Ordering order = new Ordering(null, user.get().getEmail(), updatedCart, cartCost,true);
+        Ordering order = new Ordering(null, user.getEmail(), updatedCart, cartCost,true);
         saveOrdering(order);
-        log.info(emailService.sendOrderToEmail(order.getCart(),cartCost,user.get().getEmail()));
+        log.info(emailService.sendOrderToEmail(order.getCart(),cartCost,user.getEmail()));
         log.info("Order processed successfully..");
 
         OrderResponse orderResponse = new OrderResponse(updatedCart, cartCost, new Date().toString(), order.getId());

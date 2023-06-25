@@ -398,16 +398,45 @@ public class StockService {
         saveProduct(product);
     }
 
-    public Category saveProductToCategory(Long productId, Long categoryId) {
+    public Category saveProductToCategoryByIds(Long productId, Long categoryId) {
         Category category = getCategoryById(categoryId);
         Product product = getProductById(productId);
+        Set<Category> oldCategories = product.getCategories();
         List<Product> oldProducts = category.getProducts();
         if (oldProducts.contains(product)) {
             log.error("Product '{}' is already in category '{}'", productId, categoryId);
             throw new IllegalArgumentException("Product is already in category");
         }
+        if (oldCategories.contains(category)) {
+            log.error("Category '{}' is already in product '{}'", categoryId, productId);
+            throw new IllegalArgumentException("Category is already in Product");
+        }
+        oldCategories.add(category);
         oldProducts.add(product);
         category.setProducts(oldProducts);
+        product.setCategories(oldCategories);
+        saveCategory(category);
+        return saveCategory(category);
+    }
+
+    public Category deleteProductFromCategoryByIds(Long productId, Long categoryId) {
+        Category category = getCategoryById(categoryId);
+        Product product = getProductById(productId);
+        Set<Category> oldCategories = product.getCategories();
+        List<Product> oldProducts = category.getProducts();
+        if (!oldProducts.contains(product)) {
+            log.error("Product '{}' is not in category '{}'", productId, categoryId);
+            throw new IllegalArgumentException("Product is not presented in category");
+        }
+        if (!oldCategories.contains(category)) {
+            log.error("Category '{}' is not in product '{}'", categoryId, productId);
+            throw new IllegalArgumentException("Category is not presented in product");
+        }
+        oldCategories.remove(category);
+        oldProducts.remove(product);
+        category.setProducts(oldProducts);
+        product.setCategories(oldCategories);
+        saveCategory(category);
         return saveCategory(category);
     }
 
