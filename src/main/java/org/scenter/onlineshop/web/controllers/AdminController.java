@@ -77,7 +77,7 @@ public class AdminController {
 
     @PostMapping("/placeProduct")
     public ResponseEntity<?> placeProduct(@Valid @RequestPart PlaceProductRequest placeProductRequest,
-                                          @RequestPart MultipartFile[] files) throws IllegalFormatException,FileUploadException {
+                                          @RequestPart MultipartFile[] files) throws IllegalFormatException, FileUploadException {
         return stockService.placeProduct(placeProductRequest, files);
     }
 
@@ -124,13 +124,21 @@ public class AdminController {
     }
 
     @PostMapping("/linkCategory/{childId}/to/{parentId}")
-    public ResponseEntity<?> linkCategoryToParent(@PathVariable Long childId, @PathVariable Long parentId) {
+    public ResponseEntity<?> linkCategoryToParent(@PathVariable Long childId,
+                                                  @PathVariable Long parentId) {
         return ResponseEntity.ok().body(stockService.saveParentToCategory(childId, parentId));
     }
 
     @PostMapping("/linkProduct/{productId}/to/{categoryId}")
-    public ResponseEntity<?> linkProductToCategory(@PathVariable Long productId, @PathVariable Long categoryId) {
+    public ResponseEntity<?> linkProductToCategory(@PathVariable Long productId,
+                                                   @PathVariable Long categoryId) {
         return ResponseEntity.ok().body(stockService.saveProductToCategory(productId, categoryId));
+    }
+
+    @PostMapping("/removeProduct/{productId}/from/{categoryId}")
+    public ResponseEntity<?> removeFromCategory(@PathVariable Long productId,
+                                                @PathVariable Long categoryId) {
+        return ResponseEntity.ok().body(stockService.removeFromCategory(productId, categoryId));
     }
     //  ===================================        Files management         ============================================
 

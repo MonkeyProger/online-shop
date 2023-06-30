@@ -5,12 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.scenter.onlineshop.domain.*;
 import org.scenter.onlineshop.common.exception.IllegalFormatException;
+import org.scenter.onlineshop.dto.CategoryDTO;
 import org.scenter.onlineshop.repo.*;
 import org.scenter.onlineshop.common.requests.CategoryRequest;
 import org.scenter.onlineshop.common.requests.CharacteristicRequest;
 import org.scenter.onlineshop.common.requests.CommentRequest;
 import org.scenter.onlineshop.common.requests.PlaceProductRequest;
 import org.scenter.onlineshop.common.responses.MessageResponse;
+import org.scenter.onlineshop.service.mapping.CategoryMapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.expression.AccessException;
 import org.springframework.http.HttpHeaders;
@@ -420,14 +422,28 @@ public class StockService {
     public Category saveProductToCategory(Long productId, Long categoryId) {
         Category category = getCategoryById(categoryId);
         Product product = getProductById(productId);
-        List<Product> oldProducts = category.getProducts();
-        if (oldProducts.contains(product)) {
+        List<Product> categoryProducts = category.getProducts();
+        if (categoryProducts.contains(product)) {
             log.error("Product '{}' is already in category '{}'", productId, categoryId);
             throw new IllegalArgumentException("Product is already in category");
         }
-        oldProducts.add(product);
-        category.setProducts(oldProducts);
+        categoryProducts.add(product);
+        category.setProducts(categoryProducts);
         return saveCategory(category);
+    }
+
+    public CategoryDTO removeFromCategory(Long productId, Long categoryId) {
+        Category category = getCategoryById(categoryId);
+        Product product = getProductById(productId);
+        List<Product> categoryProducts = category.getProducts();
+        if (!categoryProducts.contains(product)) {
+            log.error("No such product '{}' in category '{}'", productId, categoryId);
+            throw new IllegalArgumentException("No such product in category");
+        }
+        categoryProducts.remove(product);
+        category.setProducts(categoryProducts);
+        Category updatedCategory = saveCategory(category);
+        return CategoryMapping.convertCategoryToDTO(updatedCategory);
     }
 
     public void saveParentToCategory(String child, String parent) {

@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 
 public class CategoryMapping {
     public static CategoryDTO convertCategoryToDTO(Category category){
-        List<ProductDTO> productDTOS = category
-                .getProducts().stream()
+        List<ProductDTO> productDTOS = category.getProducts()
+                .stream()
                 .map(ProductMapping::convertProductToDTO)
                 .collect(Collectors.toList());
         CategoryDTO dto = new CategoryDTO();
