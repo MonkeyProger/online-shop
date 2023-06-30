@@ -2,6 +2,10 @@ package org.scenter.onlineshop.service.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.scenter.onlineshop.common.requests.CloseOrderRequest;
+import org.scenter.onlineshop.common.requests.PlaceOrderRequest;
+import org.scenter.onlineshop.common.responses.MessageResponse;
+import org.scenter.onlineshop.common.responses.OrderResponse;
 import org.scenter.onlineshop.domain.AppUser;
 import org.scenter.onlineshop.domain.Ordering;
 import org.scenter.onlineshop.domain.Product;
@@ -9,10 +13,6 @@ import org.scenter.onlineshop.domain.SaleProduct;
 import org.scenter.onlineshop.repo.OrderingRepo;
 import org.scenter.onlineshop.repo.SaleProductRepo;
 import org.scenter.onlineshop.repo.UserRepo;
-import org.scenter.onlineshop.common.requests.CloseOrderRequest;
-import org.scenter.onlineshop.common.requests.PlaceOrderRequest;
-import org.scenter.onlineshop.common.responses.MessageResponse;
-import org.scenter.onlineshop.common.responses.OrderResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.expression.AccessException;
 import org.springframework.http.ResponseEntity;
@@ -37,10 +37,18 @@ public class ShopService {
     private Set<Product> isCartInStock(Set<SaleProduct> productSet){
         Set<Product> notAvailableProducts = new HashSet<>();
         Set<Product> productForSave = new HashSet<>();
+
+        List<Long> productIds = productSet
+                .stream()
+                .map(SaleProduct::getProductId)
+                .collect(Collectors.toList());
+
+        Map<Long, Product> products = stockService.getProductsByIds(productIds);
+
         for (SaleProduct cartProduct : productSet) {
             int newAmount;
             Long productId = cartProduct.getProductId();
-            Product product = stockService.getProductById(productId);
+            Product product = products.get(productId);
             if (product.getAmount() < cartProduct.getAmount() || product.getAmount().equals(0)){
                 notAvailableProducts.add(product);
             } else {
@@ -49,7 +57,9 @@ public class ShopService {
                 productForSave.add(product);
             }
         }
-        if (notAvailableProducts.isEmpty()) stockService.saveAllProducts(productForSave);
+        if (notAvailableProducts.isEmpty()) {
+            stockService.saveAllProducts(productForSave);
+        }
         return notAvailableProducts;
     }
 
@@ -59,29 +69,35 @@ public class ShopService {
     }
 
     public Ordering getOrderById(Long orderId) {
-        Optional<Ordering> ordering = orderingRepo.findById(orderId);
-        if (!ordering.isPresent()){
-            log.error("Order with id " + orderId + "not found");
-            throw new NoSuchElementException("Order with id " + orderId + "not found");
-        }
-        return ordering.get();
+        return orderingRepo.findById(orderId)
+                .orElseThrow(() -> {
+                    log.error("Order with id " + orderId + "not found");
+                    return new NoSuchElementException("Order with id " + orderId + "not found");
+                });
     }
 
+    @Transactional
     public ResponseEntity<?> placeOrder(PlaceOrderRequest placeOrderRequest) {
         if (!isAuthorized(placeOrderRequest.getEmail())){
             return ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Access denied: Not enough rights for this action!"));
         }
+
+        log.info("authorize");
+
         Optional<AppUser> user = userRepo.findByEmail(placeOrderRequest.getEmail());
         if (!user.isPresent()) {
             throw new NoSuchElementException("Error: Email is not presented!");
         }
+
+        log.info("email is present");
+
         Set<SaleProduct> cart = placeOrderRequest.getOrder();
         float cartCost = placeOrderRequest.getTotal();
         Set<Product> rejectedProducts = isCartInStock(cart);
-        if (!rejectedProducts.isEmpty()) {
 
+        if (!rejectedProducts.isEmpty()) {
             return ResponseEntity
                     .badRequest()
                     .body(new MessageResponse(("The number of products in the cart exceeds the " +
@@ -90,13 +106,27 @@ public class ShopService {
                             .collect(Collectors.joining("\n")))));
 
         }
+
         Set<SaleProduct> updatedCart = saveSaleProducts(cart);
-        Ordering order = new Ordering(null, user.get().getEmail(), updatedCart, cartCost,true);
+        Ordering order = new Ordering(
+                null,
+                user.get().getEmail(),
+                updatedCart,
+                cartCost,
+                true);
         saveOrdering(order);
-        log.info(emailService.sendOrderToEmail(order.getCart(),cartCost,user.get().getEmail()));
+
+        emailService.sendOrderToEmail(order.getCart(),
+                cartCost,
+                user.get().getEmail());
+
         log.info("Order processed successfully..");
 
-        OrderResponse orderResponse = new OrderResponse(updatedCart, cartCost, new Date().toString(), order.getId());
+        OrderResponse orderResponse = new OrderResponse(updatedCart,
+                cartCost,
+                new Date().toString(),
+                order.getId());
+
         return ResponseEntity.ok(orderResponse);
     }
 

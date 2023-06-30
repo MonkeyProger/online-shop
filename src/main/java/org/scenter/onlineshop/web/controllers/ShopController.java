@@ -23,6 +23,7 @@ public class ShopController {
 
     @PostMapping("/placeOrder")
     public ResponseEntity<?> placeOrder(@Valid @RequestBody PlaceOrderRequest placeOrderRequest) {
+        log.info("place order controller");
         return shopService.placeOrder(placeOrderRequest);
     }
 

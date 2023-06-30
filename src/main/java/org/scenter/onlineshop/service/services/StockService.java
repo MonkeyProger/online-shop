@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -49,6 +50,24 @@ public class StockService {
         log.info("Product '{}' found in the database", product.get().getDescription());
         return product.get();
     }
+
+    public Map<Long, Product> getProductsByIds(List<Long> productIds) {
+        List<Product> products = productRepo.findAllById(productIds);
+        if (products.size() != productIds.size()) {
+            Set<Long> foundIds = products.stream()
+                    .map(Product::getId)
+                    .collect(Collectors.toSet());
+            List<Long> notFoundIds = productIds.stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .collect(Collectors.toList());
+            throw new NoSuchElementException("Products with ids " + notFoundIds + " not found");
+        }
+        log.info("Found {} products in the database", products.size());
+        return products
+                .stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
+    }
+
 
     public Product getProductByName(String productName) {
         Optional<Product> product = productRepo.findByTitle(productName);
