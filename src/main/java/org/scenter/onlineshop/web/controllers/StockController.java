@@ -80,6 +80,6 @@ public class StockController {
 
     @GetMapping("/allCharacteristics")
     public ResponseEntity<?> setCharacteristic() {
-        return ResponseEntity.ok().body(stockService.getAllCharacteristic());
+        return ResponseEntity.ok().body(stockService.getAllCharacteristics());
     }
 }

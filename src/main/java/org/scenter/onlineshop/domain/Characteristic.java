@@ -4,10 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.OneToOne;
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -16,11 +15,12 @@ import javax.persistence.OneToOne;
 public class Characteristic {
 
     @Id
-    @GeneratedValue()
+    @GeneratedValue
     private Long id;
 
     private String name;
 
-    @OneToOne
-    private CharacteristicValue value;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "characteristic_id")
+    private List<CharacteristicValue> values = new ArrayList<>();
 }

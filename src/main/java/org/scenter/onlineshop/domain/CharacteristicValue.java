@@ -17,5 +17,8 @@ public class CharacteristicValue {
     private Long id;
 
     private String value;
+
+    @ManyToOne
+    private Characteristic characteristic;
 }
 

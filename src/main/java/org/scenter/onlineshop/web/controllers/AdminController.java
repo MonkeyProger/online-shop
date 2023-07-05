@@ -93,17 +93,44 @@ public class AdminController {
     }
 
     //  ===================================        Characteristics management         ==================================
-    @PostMapping("/postCharact/{productName}")
-    public ResponseEntity<?> setCharacteristic(@PathVariable String productName,
-                                               @Valid @RequestBody CharacteristicRequest charactRequest) {
-        return stockService.setCharacteristic(productName, charactRequest);
+
+    @GetMapping("/allCharacteristics")
+    public ResponseEntity<?> getAllCharacteristics() {
+        return ResponseEntity.ok(stockService.getAllCharacteristics());
     }
 
-    @PostMapping("/deleteCharact/{productName}")
-    public ResponseEntity<?> deleteCharacteristic(@PathVariable String productName,
-                                                  @Valid @RequestBody CharacteristicRequest charactRequest) {
-        return stockService.deleteCharacteristic(productName, charactRequest.getName());
+    @PostMapping("/createCharact")
+    public ResponseEntity<?> createCharact(@RequestBody @Valid CharacteristicRequest characteristicRequest) {
+        return ResponseEntity.ok(stockService.createCharacteristic(characteristicRequest));
     }
+
+    @PostMapping("/addValue/{charactId}")
+    public ResponseEntity<?> addValueForCharact(@RequestBody String newValue,
+                                                @PathVariable Long charactId) {
+        return ResponseEntity.ok(stockService.addValueForCharact(newValue, charactId));
+    }
+
+    @PostMapping("/deleteValue/{valueId}")
+    public ResponseEntity<?> deleteValue(@PathVariable Long valueId) {
+        return ResponseEntity.ok(stockService.deleteCharacteristicValue(valueId));
+    }
+
+    @PostMapping("/deleteCharacteristic/{charactId}")
+    public ResponseEntity<?> deleteCharacteristic(@PathVariable Long charactId) {
+        return ResponseEntity.ok(stockService.deleteCharacteristic(charactId));
+    }
+
+    @PostMapping("/postCharact/{productName}")
+    public ResponseEntity<?> setCharacteristic(@PathVariable String productName,
+                                               @Valid @RequestBody PlaceCharactOnProductRequest placeCharactRequest) {
+        return stockService.setCharacteristic(productName, placeCharactRequest);
+    }
+//
+//    @PostMapping("/deleteCharact/{productName}")
+//    public ResponseEntity<?> deleteCharacteristic(@PathVariable String productName,
+//                                                  @Valid @RequestBody CharacteristicRequest charactRequest) {
+//        return stockService.deleteCharacteristic(productName, charactRequest.getName());
+//    }
 
     //  ===================================        Categories management         =======================================
 
