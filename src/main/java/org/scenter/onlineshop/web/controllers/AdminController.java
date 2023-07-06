@@ -5,6 +5,7 @@ import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.scenter.onlineshop.common.requests.*;
 import org.scenter.onlineshop.common.exception.ElementIsPresentedException;
 import org.scenter.onlineshop.common.exception.IllegalFormatException;
+import org.scenter.onlineshop.service.services.FileStorageService;
 import org.scenter.onlineshop.service.services.ShopService;
 import org.scenter.onlineshop.service.services.StockService;
 import org.scenter.onlineshop.service.services.UserDetailsServiceImpl;
@@ -22,10 +23,12 @@ import javax.validation.Valid;
 @AllArgsConstructor
 @PreAuthorize("hasRole('ROLE_ADMIN')")
 public class AdminController {
+
     private final StockService stockService;
     private final ShopService shopService;
     private final UserDetailsServiceImpl userDetailsService;
     private final AuthController authController;
+    private final FileStorageService fileStorageService;
 
 //  ====================================        User management         ================================================
 
@@ -77,8 +80,27 @@ public class AdminController {
 
     @PostMapping("/placeProduct")
     public ResponseEntity<?> placeProduct(@Valid @RequestPart PlaceProductRequest placeProductRequest,
-                                          @RequestPart MultipartFile[] files) throws IllegalFormatException, FileUploadException {
+                                          @RequestPart MultipartFile[] files)
+            throws IllegalFormatException, FileUploadException {
         return stockService.placeProduct(placeProductRequest, files);
+    }
+
+    @PostMapping("/placePhoto/{productId}")
+    public ResponseEntity<?> placePhotoOnProduct(@PathVariable Long productId,
+                                                 @RequestPart MultipartFile[] files)
+            throws IllegalFormatException, FileUploadException {
+        return ResponseEntity.ok(stockService.placePhotoOnProduct(productId, files));
+    }
+
+    @PostMapping("/deletePhoto/{fileId}/from/{productId}")
+    public ResponseEntity<?> deletePhotoFromProduct(@PathVariable Long productId,
+                                                    @PathVariable Long fileId) {
+        return ResponseEntity.ok(stockService.deletePhotoFromProduct(productId, fileId));
+    }
+
+    @PostMapping("/deleteFileFromStorage/{fileId}")
+    public ResponseEntity<?> deletePhotoFromProduct(@PathVariable String fileId) {
+        return ResponseEntity.ok(stockService.deleteFileFromStorage(fileId));
     }
 
     @PostMapping("/updateProduct/{productId}")
@@ -90,6 +112,11 @@ public class AdminController {
     @DeleteMapping("/deleteProduct/{productId}")
     public ResponseEntity<?> deleteProduct(@PathVariable Long productId) {
         return stockService.removeProduct(productId);
+    }
+
+    @GetMapping("/allProductsFiles")
+    public ResponseEntity<?> getAllProductsFiles() {
+        return ResponseEntity.ok(fileStorageService.getAllProductsFiles());
     }
 
     //  ===================================        Characteristics management         ==================================

@@ -9,9 +9,11 @@ import org.scenter.onlineshop.common.responses.MessageResponse;
 import org.scenter.onlineshop.domain.*;
 import org.scenter.onlineshop.dto.CategoryDTO;
 import org.scenter.onlineshop.dto.CharacteristicDTO;
+import org.scenter.onlineshop.dto.ProductDTO;
 import org.scenter.onlineshop.repo.*;
 import org.scenter.onlineshop.service.mapping.CategoryMapping;
 import org.scenter.onlineshop.service.mapping.CharacteristicMapping;
+import org.scenter.onlineshop.service.mapping.ProductMapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.expression.AccessException;
 import org.springframework.http.HttpHeaders;
@@ -30,6 +32,8 @@ import static org.scenter.onlineshop.service.mapping.CharacteristicMapping.chara
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class StockService {
+
+    private final ProductFileRepo productFileRepo;
     private final CategoryRepo categoryRepo;
     private final ProductRepo productRepo;
     private final CommentRepo commentRepo;
@@ -93,34 +97,37 @@ public class StockService {
                 placeProductRequest.getSalePrice(),
                 placeProductRequest.getAmount(),
                 null,
-                null,
+                new ArrayList<>(),
                 null);
-        product = addPhotosToProduct(product, files);
+        addPhotosToProduct(product, files);
         saveProduct(product);
         return ResponseEntity.ok(new MessageResponse("Product added successfully"));
     }
 
-    public Product addPhotosToProduct(Product product,
-                                      MultipartFile[] files) throws FileUploadException, IllegalFormatException {
+    private void addPhotosToProduct(Product product, MultipartFile[] files)
+            throws FileUploadException, IllegalFormatException {
         if (files[0].getContentType() != null) {
-            if (files.length > 10) {
-                throw new FileUploadException("Error: Too many files to upload.");
-            }
-            if (!fileStorageService.checkImages(files)) {
-                throw new IllegalFormatException("Error: Wrong format of images.");
-            }
-            List<FileDB> filesDB;
-            try {
-                filesDB = fileStorageService.saveFilesDB(files);
-            } catch (Exception e) {
-                throw new FileUploadException("Error: Fail to upload files :" + e.getMessage());
-            }
-            List<ProductFile> productFiles = new ArrayList<>();
+            List<FileDB> filesDB = saveFilesToDB(files);
+            List<ProductFile> productFiles = Optional.ofNullable(product.getImages()).orElse(new ArrayList<>());
             filesDB.forEach(file -> productFiles.add(fileStorageService.saveProductFile(file)));
             product.setImages(productFiles);
-            saveProduct(product);
         }
-        return product;
+    }
+
+    private List<FileDB> saveFilesToDB(MultipartFile[] files) throws FileUploadException, IllegalFormatException {
+        if (files.length > 10) {
+            throw new FileUploadException("Error: Too many files to upload.");
+        }
+        if (!fileStorageService.checkImages(files)) {
+            throw new IllegalFormatException("Error: Wrong format of images.");
+        }
+        List<FileDB> filesDB;
+        try {
+            filesDB = fileStorageService.saveFilesDB(files);
+        } catch (Exception e) {
+            throw new FileUploadException("Error: Fail to upload files: " + e.getMessage());
+        }
+        return filesDB;
     }
 
     public ResponseEntity<?> updateProduct(Long productId, PlaceProductRequest placeProductRequest) {
@@ -156,6 +163,35 @@ public class StockService {
         removeProduct(product);
         deleteComments(productComments);
         return ResponseEntity.ok(new MessageResponse("Product: " + product.getDescription() + " deleted successfully"));
+    }
+
+    public ProductDTO placePhotoOnProduct(Long productId, MultipartFile[] files)
+            throws IllegalFormatException, FileUploadException {
+        Product product = getProductById(productId);
+        addPhotosToProduct(product, files);
+        saveProduct(product);
+        return ProductMapping.convertProductToDTO(product);
+    }
+
+    public ProductDTO deletePhotoFromProduct(Long productId, Long fileId) {
+        Product product = getProductById(productId);
+        ProductFile productFile = productFileRepo.findById(fileId)
+                .orElseThrow(() -> new NoSuchElementException("No file with id: " + fileId));
+
+        log.info(productFile.toString());
+
+        List<ProductFile> productFiles = product.getImages();
+
+        log.info(productFiles.toString());
+
+        productFiles.remove(productFile);
+        saveProduct(product);
+        return ProductMapping.convertProductToDTO(product);
+    }
+
+    public ResponseEntity<?> deleteFileFromStorage(String fileId) {
+        fileStorageService.deleteFile(fileId);
+        return ResponseEntity.ok(new MessageResponse("File deleted successfully"));
     }
 
     // ===================== Characteristic management ===================
@@ -228,8 +264,6 @@ public class StockService {
         }
     }
 
-
-
     public ResponseEntity<?> setCharacteristic(String productName, PlaceCharactOnProductRequest pcpr) {
 
         Characteristic characteristic = characteristicRepo.findByName(pcpr.getName())
@@ -272,7 +306,8 @@ public class StockService {
     // ====================== Comment management =========================
     public ResponseEntity<?> postComment(CommentRequest commentRequest,
                                          String productName,
-                                         MultipartFile[] files) throws IllegalFormatException, FileUploadException {
+                                         MultipartFile[] files)
+            throws IllegalFormatException, FileUploadException {
 
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         Comment comment = new Comment(
@@ -292,24 +327,7 @@ public class StockService {
         log.info(Arrays.toString(files));
 
         // Сохранение файлов в бд
-        if (files[0].getContentType() != null) {
-            if (files.length > 10) {
-                throw new FileUploadException("Error: Too many files to upload.");
-            }
-            if (!fileStorageService.checkImages(files)) {
-                throw new IllegalFormatException("Error: Wrong format of images.");
-            }
-            List<FileDB> filesDB;
-            try {
-                filesDB = fileStorageService.saveFilesDB(files);
-            } catch (Exception e) {
-                throw new FileUploadException("Error: Fail to upload files :" + e.getMessage());
-            }
-            // Задание списка пользовательских фотографий комментарию
-            List<ResponseFile> commentFiles = new ArrayList<>();
-            filesDB.forEach(file -> commentFiles.add(fileStorageService.saveResponsefile(file)));
-            comment.setImages(commentFiles);
-        }
+        addPhotosToComment(comment, files);
 
         comments.add(comment);
         product.setComments(comments);
@@ -317,6 +335,16 @@ public class StockService {
         saveProduct(product);
         return ResponseEntity.ok(new MessageResponse("Comment " + comment.getId().toString() +
                 " added to product " + productName + " successfully"));
+    }
+
+    private void addPhotosToComment(Comment comment, MultipartFile[] files)
+            throws IllegalFormatException, FileUploadException {
+        if (files[0].getContentType() != null) {
+            List<FileDB> filesDB = saveFilesToDB(files);
+            List<ResponseFile> commentFiles = Optional.ofNullable(comment.getImages()).orElse(new ArrayList<>());
+            filesDB.forEach(file -> commentFiles.add(fileStorageService.saveResponsefile(file)));
+            comment.setImages(commentFiles);
+        }
     }
 
     public ResponseEntity<?> getFile(String id) {
@@ -449,7 +477,7 @@ public class StockService {
         saveProduct(product);
     }
 
-    public Category saveProductToCategory(Long productId, Long categoryId) {
+    public CategoryDTO saveProductToCategory(Long productId, Long categoryId) {
         Category category = getCategoryById(categoryId);
         Product product = getProductById(productId);
         List<Product> categoryProducts = category.getProducts();
@@ -459,7 +487,7 @@ public class StockService {
         }
         categoryProducts.add(product);
         category.setProducts(categoryProducts);
-        return saveCategory(category);
+        return CategoryMapping.convertCategoryToDTO(saveCategory(category));
     }
 
     public CategoryDTO removeFromCategory(Long productId, Long categoryId) {

@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -65,8 +64,8 @@ public class FileStorageService {
         return fileDB.orElse(null);
     }
 
-    protected Stream<FileDB> getAllFiles() {
-        return fileRepo.findAll().stream();
+    public List<ProductFile> getAllProductsFiles() {
+        return productFileRepo.findAll();
     }
 
     protected void deleteResponseFiles(List<ResponseFile> responseFiles){
@@ -75,16 +74,11 @@ public class FileStorageService {
         responseFileRepo.deleteAll(responseFiles);
     }
 
-    protected void deleteProductFiles(List<ProductFile> productFiles){
-        if (productFiles.isEmpty()) return;
-        deleteFiles(productFiles.stream().map(ProductFile::getFileDBid).collect(Collectors.toList()));
-        //responseFiles.forEach(file -> deleteFile(file.getFileDBid()));
-        productFileRepo.deleteAll(productFiles);
-    }
-
     @Transactional
     public void deleteFile(String fileId){
         fileRepo.deleteById(fileId);
+        productFileRepo.deleteByFileDBid(fileId);
+        responseFileRepo.deleteByFileDBid(fileId);
     }
 
     @Transactional

@@ -63,7 +63,9 @@ public class StockController {
     @GetMapping("/allProducts")
     public ResponseEntity<?> getAllProducts() {
         List<Product> products = stockService.getAllProducts();
-        List<ProductDTO> productDTO = products.stream().map(ProductMapping::convertProductToDTO).collect(Collectors.toList());
+        List<ProductDTO> productDTO = products.stream()
+                .map(ProductMapping::convertProductToDTO)
+                .collect(Collectors.toList());
         return ResponseEntity.ok().body(productDTO);
     }
 
