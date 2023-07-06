@@ -228,12 +228,7 @@ public class StockService {
         }
     }
 
-    private void setCharacteristic(Product product, CharacteristicValue characteristicValue) {
-        Set<CharacteristicValue> productCharacteristic = product.getCharacteristicValues();
-        productCharacteristic.add(characteristicValue);
-        product.setCharacteristicValues(productCharacteristic);
-        saveProduct(product);
-    }
+
 
     public ResponseEntity<?> setCharacteristic(String productName, PlaceCharactOnProductRequest pcpr) {
 
@@ -250,38 +245,29 @@ public class StockService {
 
         Product product = getProductByName(productName);
 
-        setCharacteristic(product, value);
+        Set<CharacteristicValue> productCharacteristic = product.getCharacteristicValues();
+        productCharacteristic.add(value);
+        product.setCharacteristicValues(productCharacteristic);
+        saveProduct(product);
 
         return ResponseEntity.ok(new MessageResponse("Characteristic " + characteristic.getName() + " = " +
                 value.getValue() + " added to product " + product.getDescription() + " successfully"));
     }
-//
-//    private ResponseEntity<?> deleteCharacteristic(Product product, Characteristic characteristic) {
-//        Set<Characteristic> productCharacteristics = product.getCharacteristics();
-//        if (!productCharacteristics.contains(characteristic)) {
-//            log.error("Characteristic is not presented in product: " + product.getDescription());
-//            throw new NoSuchElementException("Characteristic is not presented in product: " + product.getDescription());
-//        }
-//
-//        productCharacteristics.remove(characteristic);
-////        product.setCharacteristics(productCharacteristics);
-//        saveProduct(product);
-//
-//        return ResponseEntity.ok(new MessageResponse("Characteristic '" + characteristic.getName() + " = " +
-//                characteristic.getValue().getValue() + "' deleted successfully"));
-//    }
-//
-//    public ResponseEntity<?> deleteCharacteristic(String productName, String characteristicName) {
-//        Optional<Characteristic> optionalCharacteristic = characteristicRepo.findByName(characteristicName);
-//        if (!optionalCharacteristic.isPresent()) {
-//            throw new NoSuchElementException("Characteristic with name " + characteristicName + " is not presented");
-//        }
-//        Characteristic characteristicToDelete = optionalCharacteristic.get();
-//
-//        Product product = getProductByName(productName);
-//        return deleteCharacteristic(product, characteristicToDelete);
-//    }
-//
+
+    public ResponseEntity<?> deleteCharacteristicFromProduct(String productName, String characteristicValue) {
+        CharacteristicValue value = characteristicValueRepo.findByValue(characteristicValue)
+                .orElseThrow(() -> new RuntimeException("No such value: " + characteristicValue));
+
+        Product product = getProductByName(productName);
+
+        Set<CharacteristicValue> productCharacteristic = product.getCharacteristicValues();
+        productCharacteristic.remove(value);
+        product.setCharacteristicValues(productCharacteristic);
+        saveProduct(product);
+
+        return ResponseEntity.ok(new MessageResponse("Characteristic " + value.getCharacteristic().getName() + " = " +
+                value.getValue() + " deleted from product " + product.getDescription() + " successfully"));
+    }
 
     // ====================== Comment management =========================
     public ResponseEntity<?> postComment(CommentRequest commentRequest,

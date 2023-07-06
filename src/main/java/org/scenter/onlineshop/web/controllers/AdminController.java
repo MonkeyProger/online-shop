@@ -125,12 +125,12 @@ public class AdminController {
                                                @Valid @RequestBody PlaceCharactOnProductRequest placeCharactRequest) {
         return stockService.setCharacteristic(productName, placeCharactRequest);
     }
-//
-//    @PostMapping("/deleteCharact/{productName}")
-//    public ResponseEntity<?> deleteCharacteristic(@PathVariable String productName,
-//                                                  @Valid @RequestBody CharacteristicRequest charactRequest) {
-//        return stockService.deleteCharacteristic(productName, charactRequest.getName());
-//    }
+
+    @PostMapping("/deleteCharact/{productName}")
+    public ResponseEntity<?> deleteCharacteristic(@PathVariable String productName,
+                                                  @Valid @RequestBody PlaceCharactOnProductRequest charactRequest) {
+        return stockService.deleteCharacteristicFromProduct(productName, charactRequest.getValue());
+    }
 
     //  ===================================        Categories management         =======================================
 
