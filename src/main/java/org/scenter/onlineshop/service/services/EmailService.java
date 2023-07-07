@@ -21,20 +21,16 @@ import java.util.*;
 @RequiredArgsConstructor
 @Slf4j
 public class EmailService {
+
     private final TemplateEngine templateEngine;
     private final JavaMailSender javaMailSender;
     private final StockService stockService;
 
-    public EmailService(TemplateEngine templateEngine, JavaMailSender javaMailSender, StockService stockService){
-        this.templateEngine = templateEngine;
-        this.javaMailSender = javaMailSender;
-        this.stockService = stockService;
-    }
-
     @Value("${spring.mail.username}")
     private String sender;
 
-    public String sendOrderToEmail(Set<SaleProduct> cart, Float total, String email) throws MessagingException {
+    @Async
+    public void sendOrderToEmail(Set<SaleProduct> cart, Float total, String email) throws MessagingException {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
@@ -46,7 +42,7 @@ public class EmailService {
             quantities.add(saleProduct.getAmount());
         });
 
-        String description = createItemDescription(productList,quantities);
+        String description = createItemDescription(productList, quantities);
 
         helper.setFrom(sender);
         helper.setTo(email);
@@ -55,10 +51,10 @@ public class EmailService {
 
         try {
             javaMailSender.send(mimeMessage);
-            return "Mail sent successfully!";
-        }
-        catch (Exception e) {
-            return "Error while sending mail!";
+            log.info("Mail sent successfully!");
+        } catch (Exception e) {
+            log.info("Error while sending mail!");
+            throw e;
         }
     }
 
@@ -76,6 +72,7 @@ public class EmailService {
         }
         return res.toString();
     }
+
     private String createEmailContent(String description, String total) {
         Context context = new Context();
         context.setVariable("description", description);

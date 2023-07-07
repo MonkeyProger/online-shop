@@ -193,11 +193,6 @@ public class AdminController {
         return ResponseEntity.ok().body(stockService.deleteProductFromCategoryByIds(productId, categoryId));
     }
 
-    @PostMapping("/removeProduct/{productId}/from/{categoryId}")
-    public ResponseEntity<?> removeFromCategory(@PathVariable Long productId,
-                                                @PathVariable Long categoryId) {
-        return ResponseEntity.ok().body(stockService.removeFromCategory(productId, categoryId));
-    }
     //  ===================================        Files management         ============================================
 
     //  ===================================        Order management         ============================================

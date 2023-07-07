@@ -236,7 +236,7 @@ public class StockService {
 
     public List<CharacteristicDTO> deleteCharacteristicValue(Long valueId) {
         CharacteristicValue valueToDelete = characteristicValueRepo.findById(valueId)
-                        .orElseThrow(() -> new RuntimeException("No characteristic value with id: " + valueId));
+                .orElseThrow(() -> new RuntimeException("No characteristic value with id: " + valueId));
 
         deleteCharacteristicValueFromProducts(valueToDelete);
         characteristicValueRepo.delete(valueToDelete);
@@ -477,7 +477,7 @@ public class StockService {
         saveProduct(product);
     }
 
-    public Category saveProductToCategory(Long productId, Long categoryId) {
+    public CategoryDTO saveProductToCategoryByIds(Long productId, Long categoryId) {
         Category category = getCategoryById(categoryId);
         Product product = getProductById(productId);
         Set<Category> oldCategories = product.getCategories();
@@ -495,10 +495,10 @@ public class StockService {
         category.setProducts(oldProducts);
         product.setCategories(oldCategories);
         saveCategory(category);
-        return saveCategory(category);
+        return CategoryMapping.convertCategoryToDTO(saveCategory(category));
     }
 
-    public Category deleteProductFromCategoryByIds(Long productId, Long categoryId) {
+    public CategoryDTO deleteProductFromCategoryByIds(Long productId, Long categoryId) {
         Category category = getCategoryById(categoryId);
         Product product = getProductById(productId);
         Set<Category> oldCategories = product.getCategories();
@@ -515,8 +515,8 @@ public class StockService {
         oldProducts.remove(product);
         category.setProducts(oldProducts);
         product.setCategories(oldCategories);
-        saveCategory(category);
-        return saveCategory(category);
+        saveProduct(product);
+        return CategoryMapping.convertCategoryToDTO(saveCategory(category));
     }
 
     public void saveParentToCategory(String child, String parent) {
@@ -526,11 +526,11 @@ public class StockService {
         saveCategory(childCategory);
     }
 
-    public Category saveParentToCategory(Long child, Long parent) {
+    public CategoryDTO saveParentToCategory(Long child, Long parent) {
         Category parentCategory = getCategoryById(parent);
         Category childCategory = getCategoryById(child);
         childCategory.setParentId(parentCategory.getId());
-        return saveCategory(childCategory);
+        return CategoryMapping.convertCategoryToDTO(saveCategory(childCategory));
     }
 
     public List<Product> getProductsByCategory(String categoryName) {
@@ -583,6 +583,17 @@ public class StockService {
         for (Category childCategory : childCategories) {
             deepDeleteCategory(childCategory);
         }
+
+        List<Product> products = category.getProducts();
+        products.forEach(
+                product -> {
+                    Set<Category> categories = product.getCategories();
+                    categories.remove(category);
+                    product.setCategories(categories);
+                }
+        );
+        productRepo.saveAll(products);
+
         deleteCategory(category);
     }
 
