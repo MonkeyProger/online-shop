@@ -21,6 +21,7 @@ public class BaseTest {
     static void beforeAll() {
         postgreSQLContainer.start();
     }
+
     @AfterAll
     static void afterAll() {
         postgreSQLContainer.stop();

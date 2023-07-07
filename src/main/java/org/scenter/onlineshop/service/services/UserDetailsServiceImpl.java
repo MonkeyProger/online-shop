@@ -41,6 +41,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public boolean existsById(Long userId) {
         return userRepo.existsById(userId);
     }
+
     public boolean existsByEmail(String email) {
         return userRepo.existsByEmail(email);
     }
