@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import javax.mail.MessagingException;
 import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -77,7 +78,7 @@ public class ShopService {
     }
 
     @Transactional
-    public ResponseEntity<?> placeOrder(PlaceOrderRequest placeOrderRequest) {
+    public ResponseEntity<?> placeOrder(PlaceOrderRequest placeOrderRequest) throws MessagingException {
         if (!isAuthorized(placeOrderRequest.getEmail())){
             return ResponseEntity
                     .badRequest()

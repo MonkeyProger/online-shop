@@ -477,31 +477,46 @@ public class StockService {
         saveProduct(product);
     }
 
-    public CategoryDTO saveProductToCategory(Long productId, Long categoryId) {
+    public Category saveProductToCategory(Long productId, Long categoryId) {
         Category category = getCategoryById(categoryId);
         Product product = getProductById(productId);
-        List<Product> categoryProducts = category.getProducts();
-        if (categoryProducts.contains(product)) {
+        Set<Category> oldCategories = product.getCategories();
+        List<Product> oldProducts = category.getProducts();
+        if (oldProducts.contains(product)) {
             log.error("Product '{}' is already in category '{}'", productId, categoryId);
             throw new IllegalArgumentException("Product is already in category");
         }
-        categoryProducts.add(product);
-        category.setProducts(categoryProducts);
-        return CategoryMapping.convertCategoryToDTO(saveCategory(category));
+        if (oldCategories.contains(category)) {
+            log.error("Category '{}' is already in product '{}'", categoryId, productId);
+            throw new IllegalArgumentException("Category is already in Product");
+        }
+        oldCategories.add(category);
+        oldProducts.add(product);
+        category.setProducts(oldProducts);
+        product.setCategories(oldCategories);
+        saveCategory(category);
+        return saveCategory(category);
     }
 
-    public CategoryDTO removeFromCategory(Long productId, Long categoryId) {
+    public Category deleteProductFromCategoryByIds(Long productId, Long categoryId) {
         Category category = getCategoryById(categoryId);
         Product product = getProductById(productId);
-        List<Product> categoryProducts = category.getProducts();
-        if (!categoryProducts.contains(product)) {
-            log.error("No such product '{}' in category '{}'", productId, categoryId);
-            throw new IllegalArgumentException("No such product in category");
+        Set<Category> oldCategories = product.getCategories();
+        List<Product> oldProducts = category.getProducts();
+        if (!oldProducts.contains(product)) {
+            log.error("Product '{}' is not in category '{}'", productId, categoryId);
+            throw new IllegalArgumentException("Product is not presented in category");
         }
-        categoryProducts.remove(product);
-        category.setProducts(categoryProducts);
-        Category updatedCategory = saveCategory(category);
-        return CategoryMapping.convertCategoryToDTO(updatedCategory);
+        if (!oldCategories.contains(category)) {
+            log.error("Category '{}' is not in product '{}'", categoryId, productId);
+            throw new IllegalArgumentException("Category is not presented in product");
+        }
+        oldCategories.remove(category);
+        oldProducts.remove(product);
+        category.setProducts(oldProducts);
+        product.setCategories(oldCategories);
+        saveCategory(category);
+        return saveCategory(category);
     }
 
     public void saveParentToCategory(String child, String parent) {

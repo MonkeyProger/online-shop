@@ -6,34 +6,38 @@ import org.apache.commons.lang3.text.StrSubstitutor;
 import org.scenter.onlineshop.domain.Product;
 import org.scenter.onlineshop.domain.SaleProduct;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EmailService {
-
+    private final TemplateEngine templateEngine;
     private final JavaMailSender javaMailSender;
     private final StockService stockService;
 
+    public EmailService(TemplateEngine templateEngine, JavaMailSender javaMailSender, StockService stockService){
+        this.templateEngine = templateEngine;
+        this.javaMailSender = javaMailSender;
+        this.stockService = stockService;
+    }
+
     @Value("${spring.mail.username}")
     private String sender;
-    private final StringBuilder header = new StringBuilder()
-            .append("Dear customer,\n\n")
-            .append("We’re happy to let you know that we’ve received your order.\n")
-            .append("Your order details can be found below.\n");
 
-    private final StringBuilder footer = new StringBuilder()
-            .append("Workshop Team\n")
-            .append("This is an automated message, please do not reply.\n");
+    public String sendOrderToEmail(Set<SaleProduct> cart, Float total, String email) throws MessagingException {
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-    @Async
-    public void sendOrderToEmail(Set<SaleProduct> cart, float total, String email) {
         List<Product> productList = new ArrayList<>();
         List<Integer> quantities = new ArrayList<>();
         cart.forEach(saleProduct -> {
@@ -42,23 +46,19 @@ public class EmailService {
             quantities.add(saleProduct.getAmount());
         });
 
-        SimpleMailMessage mailMessage = new SimpleMailMessage();
-        String text = header +
-                createItemDescription(productList, quantities) +
-                "Total order price: " +
-                total + "\n\n" +
-                footer;
+        String description = createItemDescription(productList,quantities);
 
-        mailMessage.setFrom(sender);
-        mailMessage.setTo(email);
-        mailMessage.setText(text);
-        mailMessage.setSubject("Order confirmation");
+        helper.setFrom(sender);
+        helper.setTo(email);
+        helper.setSubject("Order confirmation");
+        helper.setText(createEmailContent(description, total.toString()), true);
+
         try {
-            javaMailSender.send(mailMessage);
-            log.info("Mail sent successfully!");
-        } catch (Exception e) {
-            log.info("Error while sending mail!");
-            throw e;
+            javaMailSender.send(mimeMessage);
+            return "Mail sent successfully!";
+        }
+        catch (Exception e) {
+            return "Error while sending mail!";
         }
     }
 
@@ -75,5 +75,12 @@ public class EmailService {
                     .append(StrSubstitutor.replace(template, params, "${", "}"));
         }
         return res.toString();
+    }
+    private String createEmailContent(String description, String total) {
+        Context context = new Context();
+        context.setVariable("description", description);
+        context.setVariable("total", total);
+
+        return templateEngine.process("message-template", context);
     }
 }

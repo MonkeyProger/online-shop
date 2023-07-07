@@ -10,6 +10,7 @@ import org.springframework.expression.AccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.mail.MessagingException;
 import javax.validation.Valid;
 
 @RestController
@@ -22,8 +23,7 @@ public class ShopController {
     private final ShopService shopService;
 
     @PostMapping("/placeOrder")
-    public ResponseEntity<?> placeOrder(@Valid @RequestBody PlaceOrderRequest placeOrderRequest) {
-        log.info("place order controller");
+    public ResponseEntity<?> placeOrder(@Valid @RequestBody PlaceOrderRequest placeOrderRequest) throws MessagingException {
         return shopService.placeOrder(placeOrderRequest);
     }
 
