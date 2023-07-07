@@ -3,14 +3,17 @@ package org.scenter.onlineshop.service.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
-import org.scenter.onlineshop.domain.*;
 import org.scenter.onlineshop.common.exception.IllegalFormatException;
-import org.scenter.onlineshop.repo.*;
-import org.scenter.onlineshop.common.requests.CategoryRequest;
-import org.scenter.onlineshop.common.requests.CharacteristicRequest;
-import org.scenter.onlineshop.common.requests.CommentRequest;
-import org.scenter.onlineshop.common.requests.PlaceProductRequest;
+import org.scenter.onlineshop.common.requests.*;
 import org.scenter.onlineshop.common.responses.MessageResponse;
+import org.scenter.onlineshop.domain.*;
+import org.scenter.onlineshop.dto.CategoryDTO;
+import org.scenter.onlineshop.dto.CharacteristicDTO;
+import org.scenter.onlineshop.dto.ProductDTO;
+import org.scenter.onlineshop.repo.*;
+import org.scenter.onlineshop.service.mapping.CategoryMapping;
+import org.scenter.onlineshop.service.mapping.CharacteristicMapping;
+import org.scenter.onlineshop.service.mapping.ProductMapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.expression.AccessException;
 import org.springframework.http.HttpHeaders;
@@ -23,10 +26,14 @@ import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.scenter.onlineshop.service.mapping.CharacteristicMapping.characteristicToDTO;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class StockService {
+
+    private final ProductFileRepo productFileRepo;
     private final CategoryRepo categoryRepo;
     private final ProductRepo productRepo;
     private final CommentRepo commentRepo;
@@ -90,34 +97,37 @@ public class StockService {
                 placeProductRequest.getSalePrice(),
                 placeProductRequest.getAmount(),
                 null,
-                null,
+                new ArrayList<>(),
                 null);
-        product = addPhotosToProduct(product, files);
+        addPhotosToProduct(product, files);
         saveProduct(product);
         return ResponseEntity.ok(new MessageResponse("Product added successfully"));
     }
 
-    public Product addPhotosToProduct(Product product,
-                                      MultipartFile[] files)throws FileUploadException, IllegalFormatException {
+    private void addPhotosToProduct(Product product, MultipartFile[] files)
+            throws FileUploadException, IllegalFormatException {
         if (files[0].getContentType() != null) {
-            if (files.length > 10) {
-                throw new FileUploadException("Error: Too many files to upload.");
-            }
-            if (!fileStorageService.checkImages(files)) {
-                throw new IllegalFormatException("Error: Wrong format of images.");
-            }
-            List<FileDB> filesDB;
-            try {
-                filesDB = fileStorageService.saveFilesDB(files);
-            } catch (Exception e) {
-                throw new FileUploadException("Error: Fail to upload files :" + e.getMessage());
-            }
-            List<ProductFile> productFiles = new ArrayList<>();
+            List<FileDB> filesDB = saveFilesToDB(files);
+            List<ProductFile> productFiles = Optional.ofNullable(product.getImages()).orElse(new ArrayList<>());
             filesDB.forEach(file -> productFiles.add(fileStorageService.saveProductFile(file)));
             product.setImages(productFiles);
-            saveProduct(product);
         }
-        return product;
+    }
+
+    private List<FileDB> saveFilesToDB(MultipartFile[] files) throws FileUploadException, IllegalFormatException {
+        if (files.length > 10) {
+            throw new FileUploadException("Error: Too many files to upload.");
+        }
+        if (!fileStorageService.checkImages(files)) {
+            throw new IllegalFormatException("Error: Wrong format of images.");
+        }
+        List<FileDB> filesDB;
+        try {
+            filesDB = fileStorageService.saveFilesDB(files);
+        } catch (Exception e) {
+            throw new FileUploadException("Error: Fail to upload files: " + e.getMessage());
+        }
+        return filesDB;
     }
 
     public ResponseEntity<?> updateProduct(Long productId, PlaceProductRequest placeProductRequest) {
@@ -155,92 +165,149 @@ public class StockService {
         return ResponseEntity.ok(new MessageResponse("Product: " + product.getDescription() + " deleted successfully"));
     }
 
-    // ===================== Characteristic management ===================
-    public List<Characteristic> getAllCharacteristic() {
-        return characteristicRepo.findAll();
-    }
-
-    private void setCharacteristic(Product product, Characteristic characteristic) {
-        Set<Characteristic> productCharacteristic = product.getCharacteristics();
-        productCharacteristic.add(characteristic);
-        product.setCharacteristics(productCharacteristic);
+    public ProductDTO placePhotoOnProduct(Long productId, MultipartFile[] files)
+            throws IllegalFormatException, FileUploadException {
+        Product product = getProductById(productId);
+        addPhotosToProduct(product, files);
         saveProduct(product);
+        return ProductMapping.convertProductToDTO(product);
     }
 
-    public ResponseEntity<?> setCharacteristic(String productName, CharacteristicRequest characteristicRequest) {
+    public ProductDTO deletePhotoFromProduct(Long productId, Long fileId) {
+        Product product = getProductById(productId);
+        ProductFile productFile = productFileRepo.findById(fileId)
+                .orElseThrow(() -> new NoSuchElementException("No file with id: " + fileId));
 
-        Characteristic characteristic = getCharacteristicName(characteristicRequest);
+        log.info(productFile.toString());
 
-        CharacteristicValue characteristicValue = getCharacteristicValue(characteristicRequest);
+        List<ProductFile> productFiles = product.getImages();
 
-        saveCharacteristicValue(characteristicValue);
-        characteristic.setValue(characteristicValue);
-        saveCharacteristic(characteristic);
+        log.info(productFiles.toString());
+
+        productFiles.remove(productFile);
+        saveProduct(product);
+        return ProductMapping.convertProductToDTO(product);
+    }
+
+    public ResponseEntity<?> deleteFileFromStorage(String fileId) {
+        fileStorageService.deleteFile(fileId);
+        return ResponseEntity.ok(new MessageResponse("File deleted successfully"));
+    }
+
+    // ===================== Characteristic management ===================
+
+    public CharacteristicDTO createCharacteristic(CharacteristicRequest characteristicRequest) {
+        final Characteristic newCharact = new Characteristic();
+        newCharact.setName(characteristicRequest.getName());
+
+        List<CharacteristicValue> values = characteristicRequest.getValues().stream()
+                .map(v -> {
+                    CharacteristicValue cv = new CharacteristicValue();
+                    cv.setCharacteristic(newCharact);
+                    cv.setValue(v);
+                    return cv;
+                })
+                .collect(Collectors.toList());
+
+        newCharact.setValues(values);
+        return characteristicToDTO(characteristicRepo.save(newCharact));
+    }
+
+    public CharacteristicDTO addValueForCharact(String newValue, Long charactId) {
+        Characteristic charactToUpdate = characteristicRepo.findById(charactId).orElseThrow(
+                () -> new RuntimeException("No such characteristic"));
+
+        CharacteristicValue cv = new CharacteristicValue();
+        cv.setCharacteristic(charactToUpdate);
+        cv.setValue(newValue);
+
+        List<CharacteristicValue> values = charactToUpdate.getValues();
+        values.add(cv);
+
+        return characteristicToDTO(characteristicRepo.save(charactToUpdate));
+    }
+
+    public List<CharacteristicDTO> getAllCharacteristics() {
+        return characteristicRepo.findAll()
+                .stream()
+                .map(CharacteristicMapping::characteristicToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<CharacteristicDTO> deleteCharacteristicValue(Long valueId) {
+        CharacteristicValue valueToDelete = characteristicValueRepo.findById(valueId)
+                        .orElseThrow(() -> new RuntimeException("No characteristic value with id: " + valueId));
+
+        deleteCharacteristicValueFromProducts(valueToDelete);
+        characteristicValueRepo.delete(valueToDelete);
+        return getAllCharacteristics();
+    }
+
+    public List<CharacteristicDTO> deleteCharacteristic(Long charactId) {
+        Characteristic characteristicToDelete = characteristicRepo.findById(charactId)
+                .orElseThrow(() -> new RuntimeException("No characteristic value with id: " + charactId));
+
+        characteristicToDelete.getValues()
+                .forEach(this::deleteCharacteristicValueFromProducts);
+
+        characteristicRepo.deleteById(charactId);
+        return getAllCharacteristics();
+    }
+
+    private void deleteCharacteristicValueFromProducts(CharacteristicValue valueToDelete) {
+        List<Product> products = productRepo.findAllByCharacteristicValuesContains(valueToDelete);
+        for (Product product : products) {
+            Set<CharacteristicValue> values = product.getCharacteristicValues();
+            values.remove(valueToDelete);
+            product.setCharacteristicValues(values);
+            productRepo.save(product);
+        }
+    }
+
+    public ResponseEntity<?> setCharacteristic(String productName, PlaceCharactOnProductRequest pcpr) {
+
+        Characteristic characteristic = characteristicRepo.findByName(pcpr.getName())
+                .orElseThrow(() -> new RuntimeException("No characteristic with name: " + pcpr.getName()));
+
+        CharacteristicValue value = characteristicValueRepo.findByValue(pcpr.getValue())
+                .orElseThrow(() -> new RuntimeException("No such value: " + pcpr.getValue()));
+
+        if (!characteristic.getValues().contains(value)) {
+            throw new RuntimeException("Сharacteristic" + characteristic.getName()
+                    + "does not contain value" + value.getValue());
+        }
 
         Product product = getProductByName(productName);
 
-        setCharacteristic(product, characteristic);
+        Set<CharacteristicValue> productCharacteristic = product.getCharacteristicValues();
+        productCharacteristic.add(value);
+        product.setCharacteristicValues(productCharacteristic);
+        saveProduct(product);
 
         return ResponseEntity.ok(new MessageResponse("Characteristic " + characteristic.getName() + " = " +
-                characteristicValue.getValue() + " added to product " + product.getDescription() + " successfully"));
+                value.getValue() + " added to product " + product.getDescription() + " successfully"));
     }
 
-    private ResponseEntity<?> deleteCharacteristic(Product product, Characteristic characteristic) {
-        Set<Characteristic> productCharacteristics = product.getCharacteristics();
-        if (!productCharacteristics.contains(characteristic)) {
-            log.error("Characteristic is not presented in product: " + product.getDescription());
-            throw new NoSuchElementException("Characteristic is not presented in product: " + product.getDescription());
-        }
-
-        productCharacteristics.remove(characteristic);
-//        product.setCharacteristics(productCharacteristics);
-        saveProduct(product);
-
-        return ResponseEntity.ok(new MessageResponse("Characteristic '" + characteristic.getName() + " = " +
-                characteristic.getValue().getValue() + "' deleted successfully"));
-    }
-
-    public ResponseEntity<?> deleteCharacteristic(String productName, String characteristicName) {
-        Optional<Characteristic> optionalCharacteristic = characteristicRepo.findByName(characteristicName);
-        if (!optionalCharacteristic.isPresent()) {
-            throw new NoSuchElementException("Characteristic with name " + characteristicName + " is not presented");
-        }
-        Characteristic characteristicToDelete = optionalCharacteristic.get();
+    public ResponseEntity<?> deleteCharacteristicFromProduct(String productName, String characteristicValue) {
+        CharacteristicValue value = characteristicValueRepo.findByValue(characteristicValue)
+                .orElseThrow(() -> new RuntimeException("No such value: " + characteristicValue));
 
         Product product = getProductByName(productName);
-        return deleteCharacteristic(product, characteristicToDelete);
-    }
 
-    private Characteristic getCharacteristicName(CharacteristicRequest characteristicRequest) {
-        Optional<Characteristic> optionalCharacteristic =
-                characteristicRepo.findByName(characteristicRequest.getName());
+        Set<CharacteristicValue> productCharacteristic = product.getCharacteristicValues();
+        productCharacteristic.remove(value);
+        product.setCharacteristicValues(productCharacteristic);
+        saveProduct(product);
 
-        if (!optionalCharacteristic.isPresent()) {
-            Characteristic characteristic = new Characteristic();
-            characteristic.setName(characteristicRequest.getName());
-            return characteristic;
-
-        }
-        return optionalCharacteristic.get();
-    }
-
-    private CharacteristicValue getCharacteristicValue(CharacteristicRequest characteristicRequest) {
-        Optional<CharacteristicValue> optionalCharacteristicValue =
-                characteristicValueRepo.findByValue(characteristicRequest.getValue());
-
-        if (!optionalCharacteristicValue.isPresent()) {
-            CharacteristicValue characteristicValue = new CharacteristicValue();
-            characteristicValue.setValue(characteristicRequest.getValue());
-            return characteristicValue;
-        }
-
-        return optionalCharacteristicValue.get();
+        return ResponseEntity.ok(new MessageResponse("Characteristic " + value.getCharacteristic().getName() + " = " +
+                value.getValue() + " deleted from product " + product.getDescription() + " successfully"));
     }
 
     // ====================== Comment management =========================
     public ResponseEntity<?> postComment(CommentRequest commentRequest,
                                          String productName,
-                                         MultipartFile[] files) throws IllegalFormatException, FileUploadException {
+                                         MultipartFile[] files)
+            throws IllegalFormatException, FileUploadException {
 
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         Comment comment = new Comment(
@@ -260,24 +327,7 @@ public class StockService {
         log.info(Arrays.toString(files));
 
         // Сохранение файлов в бд
-        if (files[0].getContentType() != null) {
-            if (files.length > 10) {
-                throw new FileUploadException("Error: Too many files to upload.");
-            }
-            if (!fileStorageService.checkImages(files)) {
-                throw new IllegalFormatException("Error: Wrong format of images.");
-            }
-            List<FileDB> filesDB;
-            try {
-                filesDB = fileStorageService.saveFilesDB(files);
-            } catch (Exception e) {
-                throw new FileUploadException("Error: Fail to upload files :" + e.getMessage());
-            }
-            // Задание списка пользовательских фотографий комментарию
-            List<ResponseFile> commentFiles = new ArrayList<>();
-            filesDB.forEach(file -> commentFiles.add(fileStorageService.saveResponsefile(file)));
-            comment.setImages(commentFiles);
-        }
+        addPhotosToComment(comment, files);
 
         comments.add(comment);
         product.setComments(comments);
@@ -287,9 +337,19 @@ public class StockService {
                 " added to product " + productName + " successfully"));
     }
 
+    private void addPhotosToComment(Comment comment, MultipartFile[] files)
+            throws IllegalFormatException, FileUploadException {
+        if (files[0].getContentType() != null) {
+            List<FileDB> filesDB = saveFilesToDB(files);
+            List<ResponseFile> commentFiles = Optional.ofNullable(comment.getImages()).orElse(new ArrayList<>());
+            filesDB.forEach(file -> commentFiles.add(fileStorageService.saveResponsefile(file)));
+            comment.setImages(commentFiles);
+        }
+    }
+
     public ResponseEntity<?> getFile(String id) {
         FileDB fileDB = fileStorageService.getFile(id);
-        if (fileDB == null){
+        if (fileDB == null) {
             throw new NoSuchElementException("File with id " + id + " is not presented");
         }
         return ResponseEntity.ok()
@@ -417,17 +477,31 @@ public class StockService {
         saveProduct(product);
     }
 
-    public Category saveProductToCategory(Long productId, Long categoryId) {
+    public CategoryDTO saveProductToCategory(Long productId, Long categoryId) {
         Category category = getCategoryById(categoryId);
         Product product = getProductById(productId);
-        List<Product> oldProducts = category.getProducts();
-        if (oldProducts.contains(product)) {
+        List<Product> categoryProducts = category.getProducts();
+        if (categoryProducts.contains(product)) {
             log.error("Product '{}' is already in category '{}'", productId, categoryId);
             throw new IllegalArgumentException("Product is already in category");
         }
-        oldProducts.add(product);
-        category.setProducts(oldProducts);
-        return saveCategory(category);
+        categoryProducts.add(product);
+        category.setProducts(categoryProducts);
+        return CategoryMapping.convertCategoryToDTO(saveCategory(category));
+    }
+
+    public CategoryDTO removeFromCategory(Long productId, Long categoryId) {
+        Category category = getCategoryById(categoryId);
+        Product product = getProductById(productId);
+        List<Product> categoryProducts = category.getProducts();
+        if (!categoryProducts.contains(product)) {
+            log.error("No such product '{}' in category '{}'", productId, categoryId);
+            throw new IllegalArgumentException("No such product in category");
+        }
+        categoryProducts.remove(product);
+        category.setProducts(categoryProducts);
+        Category updatedCategory = saveCategory(category);
+        return CategoryMapping.convertCategoryToDTO(updatedCategory);
     }
 
     public void saveParentToCategory(String child, String parent) {
@@ -495,16 +569,6 @@ public class StockService {
             deepDeleteCategory(childCategory);
         }
         deleteCategory(category);
-    }
-
-    @Transactional
-    public void saveCharacteristicValue(CharacteristicValue characteristicValue) {
-        characteristicValueRepo.save(characteristicValue);
-    }
-
-    @Transactional
-    public void saveCharacteristic(Characteristic characteristic) {
-        characteristicRepo.save(characteristic);
     }
 
     @Transactional

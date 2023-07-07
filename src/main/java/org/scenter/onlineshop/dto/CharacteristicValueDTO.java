@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class CharacteristicValueDTO {
     private Long id;
     private String value;
+    private String charactName;
 }

@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ResponseFileRepo extends JpaRepository<ResponseFile, Long> {
+    void deleteByFileDBid(String fileDBid);
 }

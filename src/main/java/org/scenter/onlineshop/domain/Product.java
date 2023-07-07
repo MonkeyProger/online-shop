@@ -7,10 +7,7 @@ import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static javax.persistence.GenerationType.AUTO;
 
@@ -46,8 +43,7 @@ public class Product {
     @LazyCollection(LazyCollectionOption.FALSE)
     private List<ProductFile> images = new ArrayList<>();
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.REMOVE)
     @LazyCollection(LazyCollectionOption.FALSE)
-    private Set<Characteristic> characteristics = new HashSet<>();
-
+    private Set<CharacteristicValue> characteristicValues = new HashSet<>();
 }

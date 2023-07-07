@@ -12,7 +12,8 @@ import static javax.persistence.GenerationType.AUTO;
 @NoArgsConstructor
 public class AppUser {
 
-    @Id @GeneratedValue(strategy = AUTO)
+    @Id
+    @GeneratedValue(strategy = AUTO)
     private Long id;
 
     private String name;

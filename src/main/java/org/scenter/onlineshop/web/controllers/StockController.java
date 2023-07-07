@@ -48,6 +48,7 @@ public class StockController {
 
         return stockService.deleteComment(commentRequest.getCommentId(), product);
     }
+
     @GetMapping ("/{product}/getComments")
     public ResponseEntity<?> getCommentsByProduct(@PathVariable String product) {
         return ResponseEntity.ok().body(stockService.getAllCommentsByProduct(product));
@@ -62,7 +63,9 @@ public class StockController {
     @GetMapping("/allProducts")
     public ResponseEntity<?> getAllProducts() {
         List<Product> products = stockService.getAllProducts();
-        List<ProductDTO> productDTO = products.stream().map(ProductMapping::convertProductToDTO).collect(Collectors.toList());
+        List<ProductDTO> productDTO = products.stream()
+                .map(ProductMapping::convertProductToDTO)
+                .collect(Collectors.toList());
         return ResponseEntity.ok().body(productDTO);
     }
 
@@ -80,6 +83,6 @@ public class StockController {
 
     @GetMapping("/allCharacteristics")
     public ResponseEntity<?> setCharacteristic() {
-        return ResponseEntity.ok().body(stockService.getAllCharacteristic());
+        return ResponseEntity.ok().body(stockService.getAllCharacteristics());
     }
 }

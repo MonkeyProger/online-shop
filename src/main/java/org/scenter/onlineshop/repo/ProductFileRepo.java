@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ProductFileRepo extends JpaRepository<ProductFile, Long> {
+    void deleteByFileDBid(String fileDBid);
 }

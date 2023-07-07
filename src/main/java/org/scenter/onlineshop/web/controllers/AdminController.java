@@ -5,6 +5,7 @@ import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.scenter.onlineshop.common.requests.*;
 import org.scenter.onlineshop.common.exception.ElementIsPresentedException;
 import org.scenter.onlineshop.common.exception.IllegalFormatException;
+import org.scenter.onlineshop.service.services.FileStorageService;
 import org.scenter.onlineshop.service.services.ShopService;
 import org.scenter.onlineshop.service.services.StockService;
 import org.scenter.onlineshop.service.services.UserDetailsServiceImpl;
@@ -22,10 +23,12 @@ import javax.validation.Valid;
 @AllArgsConstructor
 @PreAuthorize("hasRole('ROLE_ADMIN')")
 public class AdminController {
+
     private final StockService stockService;
     private final ShopService shopService;
     private final UserDetailsServiceImpl userDetailsService;
     private final AuthController authController;
+    private final FileStorageService fileStorageService;
 
 //  ====================================        User management         ================================================
 
@@ -77,8 +80,27 @@ public class AdminController {
 
     @PostMapping("/placeProduct")
     public ResponseEntity<?> placeProduct(@Valid @RequestPart PlaceProductRequest placeProductRequest,
-                                          @RequestPart MultipartFile[] files) throws IllegalFormatException,FileUploadException {
+                                          @RequestPart MultipartFile[] files)
+            throws IllegalFormatException, FileUploadException {
         return stockService.placeProduct(placeProductRequest, files);
+    }
+
+    @PostMapping("/placePhoto/{productId}")
+    public ResponseEntity<?> placePhotoOnProduct(@PathVariable Long productId,
+                                                 @RequestPart MultipartFile[] files)
+            throws IllegalFormatException, FileUploadException {
+        return ResponseEntity.ok(stockService.placePhotoOnProduct(productId, files));
+    }
+
+    @PostMapping("/deletePhoto/{fileId}/from/{productId}")
+    public ResponseEntity<?> deletePhotoFromProduct(@PathVariable Long productId,
+                                                    @PathVariable Long fileId) {
+        return ResponseEntity.ok(stockService.deletePhotoFromProduct(productId, fileId));
+    }
+
+    @PostMapping("/deleteFileFromStorage/{fileId}")
+    public ResponseEntity<?> deletePhotoFromProduct(@PathVariable String fileId) {
+        return ResponseEntity.ok(stockService.deleteFileFromStorage(fileId));
     }
 
     @PostMapping("/updateProduct/{productId}")
@@ -92,17 +114,49 @@ public class AdminController {
         return stockService.removeProduct(productId);
     }
 
+    @GetMapping("/allProductsFiles")
+    public ResponseEntity<?> getAllProductsFiles() {
+        return ResponseEntity.ok(fileStorageService.getAllProductsFiles());
+    }
+
     //  ===================================        Characteristics management         ==================================
+
+    @GetMapping("/allCharacteristics")
+    public ResponseEntity<?> getAllCharacteristics() {
+        return ResponseEntity.ok(stockService.getAllCharacteristics());
+    }
+
+    @PostMapping("/createCharact")
+    public ResponseEntity<?> createCharact(@RequestBody @Valid CharacteristicRequest characteristicRequest) {
+        return ResponseEntity.ok(stockService.createCharacteristic(characteristicRequest));
+    }
+
+    @PostMapping("/addValue/{charactId}")
+    public ResponseEntity<?> addValueForCharact(@RequestBody String newValue,
+                                                @PathVariable Long charactId) {
+        return ResponseEntity.ok(stockService.addValueForCharact(newValue, charactId));
+    }
+
+    @PostMapping("/deleteValue/{valueId}")
+    public ResponseEntity<?> deleteValue(@PathVariable Long valueId) {
+        return ResponseEntity.ok(stockService.deleteCharacteristicValue(valueId));
+    }
+
+    @PostMapping("/deleteCharacteristic/{charactId}")
+    public ResponseEntity<?> deleteCharacteristic(@PathVariable Long charactId) {
+        return ResponseEntity.ok(stockService.deleteCharacteristic(charactId));
+    }
+
     @PostMapping("/postCharact/{productName}")
     public ResponseEntity<?> setCharacteristic(@PathVariable String productName,
-                                               @Valid @RequestBody CharacteristicRequest charactRequest) {
-        return stockService.setCharacteristic(productName, charactRequest);
+                                               @Valid @RequestBody PlaceCharactOnProductRequest placeCharactRequest) {
+        return stockService.setCharacteristic(productName, placeCharactRequest);
     }
 
     @PostMapping("/deleteCharact/{productName}")
     public ResponseEntity<?> deleteCharacteristic(@PathVariable String productName,
-                                                  @Valid @RequestBody CharacteristicRequest charactRequest) {
-        return stockService.deleteCharacteristic(productName, charactRequest.getName());
+                                                  @Valid @RequestBody PlaceCharactOnProductRequest charactRequest) {
+        return stockService.deleteCharacteristicFromProduct(productName, charactRequest.getValue());
     }
 
     //  ===================================        Categories management         =======================================
@@ -124,13 +178,21 @@ public class AdminController {
     }
 
     @PostMapping("/linkCategory/{childId}/to/{parentId}")
-    public ResponseEntity<?> linkCategoryToParent(@PathVariable Long childId, @PathVariable Long parentId) {
+    public ResponseEntity<?> linkCategoryToParent(@PathVariable Long childId,
+                                                  @PathVariable Long parentId) {
         return ResponseEntity.ok().body(stockService.saveParentToCategory(childId, parentId));
     }
 
     @PostMapping("/linkProduct/{productId}/to/{categoryId}")
-    public ResponseEntity<?> linkProductToCategory(@PathVariable Long productId, @PathVariable Long categoryId) {
+    public ResponseEntity<?> linkProductToCategory(@PathVariable Long productId,
+                                                   @PathVariable Long categoryId) {
         return ResponseEntity.ok().body(stockService.saveProductToCategory(productId, categoryId));
+    }
+
+    @PostMapping("/removeProduct/{productId}/from/{categoryId}")
+    public ResponseEntity<?> removeFromCategory(@PathVariable Long productId,
+                                                @PathVariable Long categoryId) {
+        return ResponseEntity.ok().body(stockService.removeFromCategory(productId, categoryId));
     }
     //  ===================================        Files management         ============================================
 

@@ -21,5 +21,5 @@ public class ProductDTO {
     private Integer amount;
     private Set<Long> categoryId;
     private List<ProductFile> images;
-    private Set<CharacteristicDTO> characteristics;
+    private Set<CharacteristicValueDTO> characteristics;
 }
